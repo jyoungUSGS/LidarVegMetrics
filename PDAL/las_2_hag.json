@@ -1,0 +1,28 @@
+{
+  "pipeline":[
+        {
+          "type": "readers.las",
+          "filename": "C:/Temp/LAS_N16_4759_20.laz",
+          "spatialreference": "EPSG:2283"
+        },
+        {
+          "type":"filters.hag"
+        },
+        /*{
+          "type":"filters.ferry",
+          "dimensions":"HeightAboveGround = Z",
+        },*/
+        {
+          "type": "filters.range",
+          "limits": "Classification[0:1]",
+          "tag": "veg"
+        },
+        {
+          "type": "writers.gdal",
+          "filename": "C:/Temp/pdal_hag.tif",
+          "resolution": 10,
+          "output_type": "mean, max, stdev",
+          "inputs": ["veg"]
+        }
+  ]
+}

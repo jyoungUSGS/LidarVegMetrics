@@ -1,0 +1,5 @@
+pdal pipeline "C:\Users\nfkruska\Documents\GitHub\LidarVegMetrics\PDAL\las_2_dem.json"
+pdal pipeline "C:\Users\nfkruska\Documents\GitHub\LidarVegMetrics\PDAL\las_2_frs.json"
+gdal_translate -a_srs EPSG:2283 "C:/Temp/pdal_dem.tif" "C:/Temp/pdal_dem2.tif"
+gdal_translate -a_srs EPSG:2283 "C:/Temp/pdal_frs.tif" "C:/Temp/pdal_frs2.tif"
+gdal_calc.py --calc="A-B" -A "C:/Temp/pdal_frs2.tif" -B "C:/Temp/pdal_dem2.tif" --outfile="C:/Temp/gdal_chm.tif"
