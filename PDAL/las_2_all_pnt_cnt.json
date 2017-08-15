@@ -7,15 +7,13 @@
         },
         {
           "type": "filters.range",
-          "limits": "Classification[2:2]",
-          "tag": "ground"
+          "limits": "Classification[0:2]"
         },
         {
           "type": "writers.gdal",
-          "filename": "C:/Temp/pdal_dem.tif",
+          "filename": "C:/Temp/pdal_all_pnt_cnt.tif",
           "resolution": 10,
-          "output_type": "mean",
-          "inputs": ["ground"]
+          "output_type": "count"
         }
   ]
 }

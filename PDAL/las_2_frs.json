@@ -2,7 +2,8 @@
   "pipeline":[
         {
           "type": "readers.las",
-          "filename": "C:/Temp/LAS_N16_4759_20.laz"
+          "filename": "C:/Temp/LAS_N16_4759_20.laz",
+          "spatialreference": "EPSG:2283"
         },
         {
           "type": "filters.range",

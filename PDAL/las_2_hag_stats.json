@@ -8,10 +8,10 @@
         {
           "type":"filters.hag"
         },
-        /*{
+        {
           "type":"filters.ferry",
-          "dimensions":"HeightAboveGround = Z",
-        },*/
+          "dimensions":"HeightAboveGround=Z"
+        },
         {
           "type": "filters.range",
           "limits": "Classification[0:1]",
@@ -19,9 +19,9 @@
         },
         {
           "type": "writers.gdal",
-          "filename": "C:/Temp/pdal_hag.tif",
+          "filename": "C:/Temp/pdal_hag_stats.tif",
           "resolution": 10,
-          "output_type": "mean, max, stdev",
+          "output_type": "max, mean, stdev",
           "inputs": ["veg"]
         }
   ]
