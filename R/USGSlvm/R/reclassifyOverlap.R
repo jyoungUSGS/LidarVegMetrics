@@ -1,4 +1,4 @@
-flagOverlap <- function(x) {
+reclassifyOverlap <- function(x) {
     # WARNING this tool is under major development due to
     # inconsistent use of classification values.
     if (! "classFlagOverlap" %in% names(x)){

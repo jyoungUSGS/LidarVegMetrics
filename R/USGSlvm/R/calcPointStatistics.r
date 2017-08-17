@@ -2,7 +2,7 @@
 #'
 #'@description This function calculates statistics from lidar point data, including: maximum, mean, standard deviation, skewness, kurtosis, and quadratic mean.
 #'
-#'@usage pointStatistics(x, resolution = 30, pointClasses = c(3,4,5))
+#'@usage calcPointStatistics(x, resolution = 30, pointClasses = c(3,4,5))
 #'
 #'@param x Spatial Points Data Frame containing X, Y, Z coordinates and Classification data.
 #'@param resolution Number specifying the grid cell resolution of the output raster.
@@ -15,7 +15,7 @@
 #'@importFrom raster raster rasterize
 #'@importFrom moments skewness kurtosis
 
-pointStatistics <- function(x, resolution = 30, pointClasses = c(3,4,5)){
+calcPointStatistics <- function(x, resolution = 30, pointClasses = c(3,4,5)){
   tile_raster <- raster::raster(x, resolution = resolution)
   x <- x[x$Classification %in% pointClasses,]
 

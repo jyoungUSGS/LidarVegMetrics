@@ -2,7 +2,7 @@
 #'
 #'@description This function the point percentages above ground level from lidar data. The value is calculated as the number of points within a cell divided by the sum of all cells in the raster stack column.
 #'
-#'@usage heightPointCounts(x, resolution = 30, binHeight = NA, binCount = 3, pointClasses = c(3,4,5))
+#'@usage calcHeightPointPercents(x, resolution = 30, binHeight = NA, binCount = 3, pointClasses = c(3,4,5))
 #'
 #'@param x Spatial Points Data Frame containing X, Y, Z coordinates and Classification data or Raster Stack containing point counts.
 #'@param resolution Number specifying the grid cell resolution of the output raster.
@@ -15,7 +15,7 @@
 #'
 #'@export
 
-heightPointPercents <- function(x, resolution = 30, binHeight = NA, binCount = 3, pointClasses = c(3,4,5)){
+calcHeightPointPercents <- function(x, resolution = 30, binHeight = NA, binCount = 3, pointClasses = c(3,4,5)){
   if (class(x) == "SpatialPointsDataFrame"){
     pcLayer <- heightPointCounts(x, resolution = resolution, binHeight, binCount, pointClasses)
   } else {

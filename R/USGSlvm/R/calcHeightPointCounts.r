@@ -2,7 +2,7 @@
 #'
 #'@description This function counts the number of points above ground level from lidar data. It will divide the canopy into even height bins, or by number of bins.
 #'
-#'@usage heightPointCounts(x, resolution = 30, binHeight = NA, binCount = 3, pointClasses = c(3,4,5))
+#'@usage calcHeightPointCounts(x, resolution = 30, binHeight = NA, binCount = 3, pointClasses = c(3,4,5))
 #'
 #'@param x Spatial Points Data Frame containing X, Y, Z coordinates and Classification data.
 #'@param resolution Number specifying the grid cell resolution of the output raster.
@@ -16,7 +16,7 @@
 #'@export
 #'@importFrom raster raster rasterize addLayer
 
-heightPointCounts <- function(x, resolution = 30, binHeight = NA, binCount = 3, pointClasses = c(3,4,5)){
+calcHeightPointCounts <- function(x, resolution = 30, binHeight = NA, binCount = 3, pointClasses = c(3,4,5)){
   tile_raster <- raster::raster(x, resolution = resolution)
   pointCount_stack <- raster::raster(x, resolution = resolution)
   x <- x[x$Classification %in% pointClasses, ]

@@ -2,7 +2,7 @@
 #'
 #'@description This function will take normalized Z elevation values and reassign the classification.
 #'
-#'@usage classifyVegByHeight(x, binHeight = NA, binCount = 3)
+#'@usage classifyByHAG(x, binHeight = NA, binCount = 3)
 #'
 #'@param x Spatial Points Data Frame containing X, Y, Z coordinates and Classification data.
 #'@param BinHeight value to set a fixed height for classification. If not set, binCount is used.
@@ -13,7 +13,7 @@
 #'
 #'@export
 
-classifyVegByHeight <- function(x, binHeight = NA, binCount = 3){
+classifyByHAG <- function(x, binHeight = NA, binCount = 3){
     # x <- x[x$Classification %in% pointClasses,]
 
     maxAgl <- max(x$Z_agl[x$Classification %in% c(0,1)], na.rm=TRUE)

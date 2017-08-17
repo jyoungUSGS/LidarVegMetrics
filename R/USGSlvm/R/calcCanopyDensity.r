@@ -1,8 +1,8 @@
-#'Calculate Canopy Cover
+#'Calculate Canopy Density
 #'
-#'@description This function calculates the canopy cover of an area from lidar data. The canopy cover is calculated as the percentage of vegetation first returns to all first returns.
+#'@description This function calculates the canopy density of an area from lidar data. The canopy cover is calculated as the percentage of vegetation returns to all returns.
 #'
-#'@usage canopyCover(x, resolution = 30, pointClasses = c(3,4,5))
+#'@usage calcCanopyDensity(x, resolution = 30, pointClasses = c(3,4,5))
 #'
 #'@param x Spatial Points Data Frame containing X, Y, Z coordinates and Classification data.
 #'@param resolution Number specifying the grid cell resolution of the output raster.
@@ -11,17 +11,16 @@
 #'@author Nicholas Kruskamp
 #'@examples
 #'
-#' canopyCoverRaster <- canopyCover(lasdata)
+#' canopyDensityRaster <- calcCanopyDensity(lasdata)
 #'
 #'@export
 #'@importFrom raster raster rasterize
 
-canopyCover <- function(x, resolution = 30, pointClasses = c(3,4,5)) {
+calcCanopyDensity <- function(x, resolution = 30, pointClasses = c(3,4,5)) {
   rast_template <- raster::raster(x, resolution = resolution)
-  x <- x[x$ReturnNumber==1, ]
   all_rast <- raster::rasterize(x@coords[, c("X","Y")], rast_template, x$Z, fun='count')
   x <- x[x$Classification %in% pointClasses, ]
   veg_rast <- raster::rasterize(x@coords[, c("X","Y")], rast_template, x$Z, fun='count')
-  canCov_rast <- veg_rast / all_rast * 100
-  return(canCov_rast)
+  canDen_rast <- veg_rast / all_rast * 100
+  return(canDen_rast)
 }

@@ -2,7 +2,7 @@
 #'
 #'@description This function calculates percentiles of lidar points.
 #'
-#'@usage heightPercentiles(x, resolution = 30, percentiles = c(.10, .20, .30, .40, .50, .60, .70, .80, .90, .98), pointClasses = c(3,4,5))
+#'@usage calcHeightPercentiles(x, resolution = 30, percentiles = c(.10, .20, .30, .40, .50, .60, .70, .80, .90, .98), pointClasses = c(3,4,5))
 #'
 #'@param x Spatial Points Data Frame containing X, Y, Z coordinates and Classification data.
 #'@param resolution Number specifying the grid cell resolution of the output raster.
@@ -15,7 +15,7 @@
 #'@export
 #'@importFrom raster raster rasterize addLayer
 
-heightPercentiles <- function(x, resolution = 30, percentiles = c(.10, .20, .30, .40, .50, .60, .70, .80, .90, .98), pointClasses = c(3,4,5)){
+calcHeightPercentiles <- function(x, resolution = 30, percentiles = c(.10, .20, .30, .40, .50, .60, .70, .80, .90, .98), pointClasses = c(3,4,5)){
   tile_raster <- raster::raster(x, resolution = resolution)
   perc_stack <- raster::raster(x, resolution = resolution)
   x <- x[x$Classification %in% pointClasses, ]
