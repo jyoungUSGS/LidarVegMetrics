@@ -2,7 +2,7 @@
 #'
 #'@description This function reads and returns values associated with the LAS file format. The LAS file is a public file format for the interchange of LiDAR 3-dimensional point cloud data (American Society of Photogrammetry and Remote Sensing - ASPRS)
 #'
-#'@usage readLASdata (LASfile, short=TRUE)
+#'@usage readLASdata_bin (LASfile, short=TRUE)
 #'
 #'@param LASfile A standard LAS data file (ASPRS)
 #'@param short Logical, if TRUE it will return only a 5-column matrix with information on the returned point x, y, z locations, point intensity and the number of return within an individual discrete-return system laser pulse.
@@ -11,10 +11,9 @@
 #'@author Original Script: rLiDAR package by Michael Sumner and Carlos Alberto Silva. https://cran.r-project.org/package=rLiDAR Modified by Nicholas Kruskamp to meet (most of) LAS 1.4 spec and output a Spatial Points class.
 #'@examples
 #'
-#'@export
 #'@importFrom bitops bitAnd bitShiftR
 #'@importFrom sp coordinates proj4string CRS
-readLASdata<- function(LASfile, short=TRUE, projection=NA) {
+readLASdata_bin<- function(LASfile, short=TRUE, projection=NA) {
 
   if (class(short)!="logical") {
     stop("The short parameter is invalid. It must to be a TRUE or FALSE logical statement")

@@ -2,15 +2,15 @@
 #'
 #'@description This function reads and returns values associated with the LAS file format header. The LAS file is a public file format for the interchange of LiDAR 3-dimensional point cloud data (American Society of Photogrammetry and Remote Sensing - ASPRS)
 #'
-#'@usage readLASheader (LASfile)
+#'@usage readLASheader_bin (LASfile)
 #'
 #'@param LASfile A standard LAS data file (ASPRS)
 #'@return Returns a list of the information stored in the LAS file header.
 #'@author Original Script: rLiDAR package by Michael Sumner and Carlos Alberto Silva. https://cran.r-project.org/package=rLiDAR Modified by Nicholas Kruskamp to read and output the header information.
 #'@examples
 #'
-#'@export
-readLASheader<- function(LASfile) {
+
+readLASheader_bin<- function(LASfile) {
 
   con <- file(LASfile, open = "rb")
   isLASFbytes <- readBin(con, "raw", size = 1, n = 4, endian = "little")

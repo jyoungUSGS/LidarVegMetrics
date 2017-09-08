@@ -16,11 +16,11 @@
 #'@export
 #'@importFrom raster raster rasterize
 
-calcCanopyDensity <- function(x, resolution = 30, pointClasses = c(3,4,5)) {
-  rast_template <- raster::raster(x, resolution = resolution)
-  all_rast <- raster::rasterize(x@coords[, c("X","Y")], rast_template, x$Z, fun='count')
+calcCanopyDensity <- function(x, resolution = 30, pointClasses = c(100:200)) {
+  r <- raster::raster(x, resolution = resolution)
+  allRast <- raster::rasterize(x@coords, r, x$Z, fun='count')
   x <- x[x$Classification %in% pointClasses, ]
-  veg_rast <- raster::rasterize(x@coords[, c("X","Y")], rast_template, x$Z, fun='count')
-  canDen_rast <- veg_rast / all_rast * 100
-  return(canDen_rast)
+  vegRast <- raster::rasterize(x@coords, r, x$Z, fun='count')
+  canDenRast <- vegRast / allRast * 100
+  return(canDenRast)
 }

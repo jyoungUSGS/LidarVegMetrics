@@ -15,7 +15,7 @@
 #'@export
 #'@importFrom raster raster rasterize addLayer
 
-calcHeightPercentiles <- function(x, resolution = 30, percentiles = c(.10, .20, .30, .40, .50, .60, .70, .80, .90, .98), pointClasses = c(3,4,5)){
+calcHeightPercentiles <- function(x, resolution = 30, percentiles = c(.10, .20, .30, .40, .50, .60, .70, .80, .90, .98), pointClasses = c(100:200)){
   tile_raster <- raster::raster(x, resolution = resolution)
   perc_stack <- raster::raster(x, resolution = resolution)
   x <- x[x$Classification %in% pointClasses, ]

@@ -1,0 +1,16 @@
+{
+  "pipeline":[
+    {
+        "type": "readers.las",
+        "filename": "C:/Temp/test3.las"
+    },
+    {
+        "type":"filters.decimation",
+        "step": 2
+    },
+    {
+      "type":"writers.las",
+      "filename":"C:/Temp/test4.las"
+    }
+  ]
+}

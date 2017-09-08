@@ -15,7 +15,7 @@
 #'
 #'@export
 
-calcHeightPointPercents <- function(x, resolution = 30, binHeight = NA, binCount = 3, pointClasses = c(3,4,5)){
+calcHeightPointPercents <- function(x, resolution = 30, binHeight = NA, binCount = 3, pointClasses = c(100:200)){
   if (class(x) == "SpatialPointsDataFrame"){
     pcLayer <- heightPointCounts(x, resolution = resolution, binHeight, binCount, pointClasses)
   } else {

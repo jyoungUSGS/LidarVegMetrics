@@ -11,7 +11,6 @@
 #'@author Nicholas Kruskamp
 #'@examples
 #'
-#'@export
 #'@importFrom FNN knn.dist
 
 classifyNoise <- function(x, threshold = 3, nn=7){

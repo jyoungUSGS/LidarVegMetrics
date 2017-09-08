@@ -13,8 +13,8 @@
 #'
 #'@export
 
-calcVertDistRatio <- function(x, resolution = 30, pointClasses = c(3,4,5)){
-  percLayer <- heightPercentiles(x, resolution = resolution, percentiles = c(.50, .98, 1.0))
+calcVertDistRatio <- function(x, resolution = 30, pointClasses = c(100:200)){
+  percLayer <- calcHeightPercentiles(x, resolution = resolution, percentiles = c(.50, .98, 1.0))
   x <- x[x$Classification %in% pointClasses, ]
   vdr98 <- (percLayer$X98 - percLayer$X50) / percLayer$X98
   vdr100 <- (percLayer$X100 - percLayer$X50) / percLayer$X100

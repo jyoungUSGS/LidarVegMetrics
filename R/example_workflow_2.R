@@ -1,21 +1,45 @@
 library(rlas)
 library(sp)
 library(raster)
-library(lidarpro)
+library(USGSlvm)
 library(rgdal)
 library(data.table)
+library(gstat)
 
-input_dir <- "C:/Temp"
-input_file <- "LAS_N16_4759_20.laz"
+inputDir <- "C:/Temp"
+inputFile <- "test.las"
 # CRS VA State Plane North
-input_CRS <- "+proj=lcc +lat_1=39.2 +lat_2=38.03333333333333 +lat_0=37.66666666666666 +lon_0=-78.5 +x_0=3500000.0001016 +y_0=2000000.0001016 +ellps=GRS80 +datum=NAD83 +to_meter=0.3048006096012192 +no_defs"
-output_CRS <- "+proj=utm +zone=17 +ellps=GRS80 +datum=NAD83 +units=m +no_defs"
-output_res <- 24
-setwd(input_dir)
+inputCRS <- "+proj=lcc +lat_1=39.2 +lat_2=38.03333333333333 +lat_0=37.66666666666666 +lon_0=-78.5 +x_0=3500000.0001016 +y_0=2000000.0001016 +ellps=GRS80 +datum=NAD83 +to_meter=0.3048006096012192 +no_defs"
+# NAD 83 UTM 17 N
+outputCRS <- "+proj=utm +zone=17 +ellps=GRS80 +datum=NAD83 +units=m +no_defs"
+
+outputRes <- 100
+setwd(inputDir)
+
+# load LAS data
+LasData <- read_lidar_data(inputFile, inputCRS)
+
+dem <- createDEM(LasData, outputRes)
+dsm <- createDSM(LasData, outputRes)
+chm <- dsm - dem
+
+LasData <- normalizeByDEM(LasData, dem)
+LasData <- classifyByHAG(LasData)
+lasStatLayers <- calcPointStatistics(LasData, outputRes)
+percentileLayers <- calcHeightPercentiles(LasData, outputRes)
+vdRatioLayers <- calcVertDistRatio(LasData, outputRes)
+canCover <- calcCanopyCover(LasData, outputRes)
+canDensity <- calcCanopyDensity(LasData, outputRes)
+pointCountLayers <- calcHeightPointCounts(LasData, outputRes)
+pointPercentLayers <- calcHeightPointPercents(pointCountLayers, outputRes)
+
+
+
+
 
 # create veg plot polygons
-veg_plot_pnts <- readOGR(input_dir, layer = "SNP_FORVEG_all_plots")
-output_CRS <- veg_plot_pnts@proj4string
+veg_plot_pnts <- readOGR(inputDir, layer = "SNP_FORVEG_all_plots")
+outputCRS <- veg_plot_pnts@proj4string
 veg_plot_xy <- veg_plot_pnts@data[,10:11]
 veg_plot_xy[,3] <- veg_plot_xy[,1] + 24
 veg_plot_xy[,4] <- veg_plot_xy[,2]
@@ -31,7 +55,7 @@ polys_list <- list()
 for (i in 1:length(poly_list)){
   polys_list[[i]] <- Polygons(poly_list[i], i)
 }
-shen_polys <- SpatialPolygons(polys_list, proj4string = output_CRS)
+shen_polys <- SpatialPolygons(polys_list, proj4string = outputCRS)
 veg_plot_poly <- SpatialPolygonsDataFrame(shen_polys, veg_plot_pnts@data)
 plot(veg_plot_poly)
 
@@ -49,33 +73,4 @@ fStats_tree_v4$sumBA <- fData_tree_v4[,.(sum(TreeBA_m2, na.rm=T)), by=.(SiteID)]
 veg_plot_poly@data <- merge(veg_plot_poly@data, fStats_tree_v4, by = "SiteID")
 
 # save data as shapefile
-writeOGR(veg_plot_poly, dsn = input_dir, layer = "shen_veg_plot_poly", driver = "ESRI Shapefile", overwrite_layer = T)
-
-# load LAS data
-lasData <- rlas::readlasdata(input_file)
-
-sp::coordinates(lasData) <- c("X", "Y" ,"Z")
-sp::proj4string(lasData) <- sp::CRS(input_CRS)
-lasData <- sp::spTransform(lasData, output_CRS)
-lasData <- flagNoiseKnn(lasData)
-lasData <- lasData[lasData$Classification %in% c(0, 1, 2), ]
-
-# lidar metrics
-rast_template <- raster(lasData, resolution = output_res)
-dem <- rasterize(lasData@coords[lasData$Classification==2, 1:2 ], rast_template, lasData$Z[lasData$Classification==2], fun=mean)
-dem <- focal(dem, w=matrix(1, 7, 7), fun=mean, na.rm=TRUE, NAonly=TRUE)
-plot(dem, main = "Digital Elevation Model")
-frs <- rasterize(lasData@coords[lasData$ReturnNumber==1, 1:2 ], rast_template, lasData$Z[lasData$ReturnNumber==1], fun=max)
-frs <- focal(frs, w=matrix(1, 7, 7), fun=mean, na.rm=TRUE, NAonly=TRUE)
-plot(frs, main = "First Return Surface")
-chm <- frs - dem
-plot(chm, main = "Canopy Height Model")
-lasData <- normalize(lasData)
-lasData <- classifyVegByHeight(lasData)
-lasStatLayers <- pointStatistics(lasData, output_res)
-percentileLayers <- heightPercentiles(lasData, output_res)
-vdRatioLayers <- vertDistRatio(lasData, output_res)
-canCover <- canopyCover(lasData, output_res)
-canDensity <- canopyDensity(lasData, output_res)
-pointCountLayers <- heightPointCounts(lasData, output_res)
-pointPercentLayers <- heightPointPercents(pointCountLayers, output_res)
+writeOGR(veg_plot_poly, dsn = inputDir, layer = "shen_veg_plot_poly", driver = "ESRI Shapefile", overwrite_layer = T)

@@ -12,7 +12,6 @@
 #' # dem surface raster is interpolated using mean of ground classified values, with default grid cell of 30 units.
 #' lasdata <- normalize(lasdata)
 #'
-#'@export
 #'@importFrom FNN knnx.index
 
 normalizeHAG <- function(x) {

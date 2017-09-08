@@ -15,22 +15,22 @@
 #'@importFrom raster raster rasterize
 #'@importFrom moments skewness kurtosis
 
-calcPointStatistics <- function(x, resolution = 30, pointClasses = c(3,4,5)){
-  tile_raster <- raster::raster(x, resolution = resolution)
+calcPointStatistics <- function(x, resolution = 30, pointClasses = c(100:200)){
+  r <- raster::raster(x, resolution = resolution)
   x <- x[x$Classification %in% pointClasses,]
 
-  qmean <- function(x,...){
-      sqrt((sum(x^2)/length(x)))
+  qMean <- function(x,...){
+      sqrt(mean(x^2))
   }
 
-  max_rast <- raster::rasterize(x@coords[ , 1:2], tile_raster, field = x$Z_agl, fun=max)
-  mean_rast <- raster::rasterize(x@coords[ , 1:2], tile_raster, field = x$Z_agl, fun=mean)
-  sd_rast <- raster::rasterize(x@coords[ , 1:2], tile_raster, field = x$Z_agl, fun=sd)
-  skew_rast <- raster::rasterize(x@coords[ , 1:2], tile_raster, field = x$Z_agl, fun=moments::skewness)
-  kurt_rast <- raster::rasterize(x@coords[ , 1:2], tile_raster, field = x$Z_agl, fun=moments::kurtosis)
-  qmean_rast <- raster::rasterize(x@coords[ , 1:2], tile_raster, field = x$Z_agl, fun=qmean)
+  maxRast <- raster::rasterize(x@coords, r, field = x$Z_agl, fun=max)
+  meanRast <- raster::rasterize(x@coords, r, field = x$Z_agl, fun=mean)
+  sdRast <- raster::rasterize(x@coords, r, field = x$Z_agl, fun=sd)
+  skewRast <- raster::rasterize(x@coords, r, field = x$Z_agl, fun=moments::skewness)
+  kurtRast <- raster::rasterize(x@coords, r, field = x$Z_agl, fun=moments::kurtosis)
+  qMeanRast <- raster::rasterize(x@coords, r, field = x$Z_agl, fun=qMean)
 
-  layer_list <- list(max_rast, mean_rast, sd_rast, skew_rast, kurt_rast, qmean_rast)
-  names(layer_list) <- c("max", "mean", "stdev", "skewness", "kurtosis", "quad mean")
-  return(layer_list)
+  layerList <- list(maxRast, meanRast, sdRast, skewRast, kurtRast, qMeanRast)
+  names(layerList) <- c("max", "mean", "stdev", "skewness", "kurtosis", "quad mean")
+  return(layerList)
 }

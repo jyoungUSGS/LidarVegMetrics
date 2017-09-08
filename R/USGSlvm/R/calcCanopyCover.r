@@ -16,12 +16,12 @@
 #'@export
 #'@importFrom raster raster rasterize
 
-calcCanopyCover <- function(x, resolution = 30, pointClasses = c(3,4,5)) {
-  rast_template <- raster::raster(x, resolution = resolution)
+calcCanopyCover <- function(x, resolution = 30, pointClasses = c(100:200)) {
+  r <- raster::raster(x, resolution = resolution)
   x <- x[x$ReturnNumber==1, ]
-  all_rast <- raster::rasterize(x@coords[, c("X","Y")], rast_template, x$Z, fun='count')
+  allRast <- raster::rasterize(x@coords, r, x$Z, fun='count')
   x <- x[x$Classification %in% pointClasses, ]
-  veg_rast <- raster::rasterize(x@coords[, c("X","Y")], rast_template, x$Z, fun='count')
-  canCov_rast <- veg_rast / all_rast * 100
-  return(canCov_rast)
+  vegRast <- raster::rasterize(x@coords, r, x$Z, fun='count')
+  canCovRast <- vegRast / allRast * 100
+  return(canCovRast)
 }

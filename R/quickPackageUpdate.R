@@ -1,0 +1,5 @@
+library(devtools)
+library(roxygen2)
+setwd("C:/Users/nfkruska/Documents/GitHub/LidarVegMetrics/R")
+document("USGSlvm")
+install("USGSlvm")

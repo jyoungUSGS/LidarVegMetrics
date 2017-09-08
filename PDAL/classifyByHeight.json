@@ -1,0 +1,14 @@
+{
+  "pipeline":[
+    "C:/Temp/test.las",
+    {
+      "type":"filters.programmable",
+      "script":"C:/Users/nfkruska/Documents/GitHub/LidarVegMetrics/PDAL/USGS_pdal_functions.py",
+      "function":"multiply_z",
+      "module":"anything"
+    },
+    {
+      "type":"writers.null"
+    }
+  ]
+}

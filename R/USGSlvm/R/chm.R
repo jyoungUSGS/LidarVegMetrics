@@ -11,7 +11,6 @@
 #'@author Nicholas Kruskamp
 #'@examples
 #'
-#'@export
 #'@importFrom raster raster rasterize focal
 
 canopyHeightModel <- function(x, resolution = 30){

@@ -14,7 +14,7 @@ classifyNoise(x, threshold = 3, nn=7)
 \item{pointClasses}{Number of neighbors a point should have to not be considered an outlier/noise.}
 }
 \value{
-in-place processing of the Spatial Points Data Frame, adding or appending a 'classFlagWithheld' column.
+in-place processing of the Spatial Points Data Frame, classifying noise as Classification 7.
 }
 \description{
 This function identifies potential outlier/noise points using a k-nearest neighbor approach, where if a given point does not have "nn" neighbors within "threshold" distance, then it is an outlier/noise.

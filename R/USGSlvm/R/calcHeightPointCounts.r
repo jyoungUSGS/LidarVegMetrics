@@ -16,9 +16,10 @@
 #'@export
 #'@importFrom raster raster rasterize addLayer
 
-calcHeightPointCounts <- function(x, resolution = 30, binHeight = NA, binCount = 3, pointClasses = c(3,4,5)){
-  tile_raster <- raster::raster(x, resolution = resolution)
-  pointCount_stack <- raster::raster(x, resolution = resolution)
+calcHeightPointCounts <- function(x, resolution = 30, binHeight = NA,
+                                  binCount = 3, pointClasses = c(100:200)){
+  r <- raster::raster(x, resolution = resolution)
+  pcStack <- raster::raster(x, resolution = resolution)
   x <- x[x$Classification %in% pointClasses, ]
   maxAgl <- max(x$Z_agl, na.rm=TRUE)
   if (is.na(binHeight)) {
@@ -31,9 +32,11 @@ calcHeightPointCounts <- function(x, resolution = 30, binHeight = NA, binCount =
   for (i in 1:binCount){
     bottom <- bottom
     top <- bottom + binHeight
-    count_rast <- raster::rasterize(x@coords[bottom <= x$Z_agl & x$Z_agl < top , 1:2], tile_raster, field = x$Z_agl[bottom < x$Z_agl & x$Z_agl < top], fun='count')
-    pointCount_stack <- raster::addLayer(pointCount_stack, count_rast)
+    countRast <- raster::rasterize(x@coords[bottom <= x$Z_agl & x$Z_agl < top , ],
+                                   r, field = x$Z_agl[bottom < x$Z_agl & x$Z_agl < top],
+                                   fun='count')
+    pcStack <- raster::addLayer(pcStack, countRast)
     bottom <- top
   }
-  return(pointCount_stack)
+  return(pcStack)
   }

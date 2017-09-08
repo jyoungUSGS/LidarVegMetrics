@@ -9,8 +9,8 @@
 #'@author Original Script: rLiDAR package by Michael Sumner and Carlos Alberto Silva. https://cran.r-project.org/package=rLiDAR Modified by Nicholas Kruskamp to read vlr.
 #'@examples
 #'
-#'@export
-readLASvlr<- function(LASfile) {
+
+readLASvlr_bin<- function(LASfile) {
 
   pheader <- readLASheader(LASfile)
 
