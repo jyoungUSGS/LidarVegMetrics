@@ -44,8 +44,8 @@ tileMetrics <- function(x, CRS, resolution = 30) {
 
   tileName <- basename(tools::file_path_sans_ext(lidarFiles[2]))
 
-  writeRaster(dem, paste0(fileName, "_dem.tif"))
-  writeRaster(dsm, paste0(fileName, "_dsm.tif"))
+  writeRaster(dem, paste0(tileName, "_dem.tif"))
+  writeRaster(dsm, paste0(tileName, "_dsm.tif"))
 }
 
 
