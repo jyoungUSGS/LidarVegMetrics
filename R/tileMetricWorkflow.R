@@ -29,24 +29,26 @@ clVars <- clusterExport(cl, c("lidarFiles", "outputRes", "inputCRS"))
 
 
 tileMetrics <- function(x, CRS, resolution = 30) {
-  LasData <- readLidarData(lidarFiles[2], inputCRS)
-  dem <- createDEM(LasData, resolution)
-  dsm <- createDSM(LasData, resolution)
-  LasData <- normalizeByDEM(LasData, dem)
-  LasData <- classifyByHeight(LasData)
-  lasStatLayers <- calcPointStatistics(LasData, resolution)
-  percentileLayers <- calcHeightPercentiles(LasData, resolution)
-  vdRatioLayers <- calcVertDistRatio(LasData, resolution)
-  canCover <- calcCanopyCover(LasData, resolution)
-  canDensity <- calcCanopyDensity(LasData, resolution)
-  pointCountLayers <- calcHeightPointCounts(LasData, resolution)
-  pointPercentLayers <- calcHeightPointPercents(pointCountLayers, resolution)
+  # LasData <- readLidarData(lidarFiles[2], inputCRS)
+  # dem <- createDEM(LasData, resolution)
+  # dsm <- createDSM(LasData, resolution)
+  # LasData <- normalizeByDEM(LasData, dem)
+  # LasData <- classifyByHeight(LasData)
+  # lasStatLayers <- calcPointStatistics(LasData, resolution)
+  # percentileLayers <- calcHeightPercentiles(LasData, resolution)
+  # vdRatioLayers <- calcVertDistRatio(LasData, resolution)
+  # canCover <- calcCanopyCover(LasData, resolution)
+  # canDensity <- calcCanopyDensity(LasData, resolution)
+  # pointCountLayers <- calcHeightPointCounts(LasData, resolution)
+  # pointPercentLayers <- calcHeightPointPercents(pointCountLayers, resolution)
 
-  tileName <- basename(tools::file_path_sans_ext(lidarFiles[2]))
+  tileName <- basename(tools::file_path_sans_ext(x))
 
-  writeRaster(dem, paste0(tileName, "_dem.tif"))
-  writeRaster(dsm, paste0(tileName, "_dsm.tif"))
+    return(tileName)
+
+  # writeRaster(dem, paste0(tileName, "_dem.tif"))
+  # writeRaster(dsm, paste0(tileName, "_dsm.tif"))
 }
 
 
-output <- parLapply(cl, lidarFiles, tileMetrics, inputCRS, outputRes)
+system.time(output <- parLapply(cl, lidarFiles, tileMetrics, inputCRS, outputRes))
