@@ -6,36 +6,7 @@ library(rgdal)
 library(data.table)
 library(gstat)
 
-inputDir <- "C:/Temp"
-inputFile <- "test.las"
-# CRS VA State Plane North
-inputCRS <- "+proj=lcc +lat_1=39.2 +lat_2=38.03333333333333 +lat_0=37.66666666666666 +lon_0=-78.5 +x_0=3500000.0001016 +y_0=2000000.0001016 +ellps=GRS80 +datum=NAD83 +to_meter=0.3048006096012192 +no_defs"
-# NAD 83 UTM 17 N
-outputCRS <- "+proj=utm +zone=17 +ellps=GRS80 +datum=NAD83 +units=m +no_defs"
-
-outputRes <- 100
-setwd(inputDir)
-
-# load LAS data
-LasData <- read_lidar_data(inputFile, inputCRS)
-
-dem <- createDEM(LasData, outputRes)
-dsm <- createDSM(LasData, outputRes)
-chm <- dsm - dem
-
-LasData <- normalizeByDEM(LasData, dem)
-LasData <- classifyByHAG(LasData)
-lasStatLayers <- calcPointStatistics(LasData, outputRes)
-percentileLayers <- calcHeightPercentiles(LasData, outputRes)
-vdRatioLayers <- calcVertDistRatio(LasData, outputRes)
-canCover <- calcCanopyCover(LasData, outputRes)
-canDensity <- calcCanopyDensity(LasData, outputRes)
-pointCountLayers <- calcHeightPointCounts(LasData, outputRes)
-pointPercentLayers <- calcHeightPointPercents(pointCountLayers, outputRes)
-
-
-
-
+setwd("C:/Temp/CONUS")
 
 # create veg plot polygons
 veg_plot_pnts <- readOGR(inputDir, layer = "SNP_FORVEG_all_plots")

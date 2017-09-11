@@ -8,9 +8,7 @@ library(USGSlvm)
 library(tools)
 library(parallel)
 
-inputDir <- "C:/Temp"
-setwd(inputDir)
-lidarFiles <- tools::list_files_with_exts(getwd(), c("LAS", "las", "LAZ", "laz"))
+setwd("C:/Temp/CONUS")
 
 # retreive from config file?
 outputRes <- 100
@@ -28,9 +26,24 @@ clPackage <- clusterEvalQ(cl, {library(rlas); library(sp); library(raster);
 clVars <- clusterExport(cl, c("lidarFiles", "outputRes", "inputCRS"))
 
 
-tileMetrics <- function(x, CRS, resolution = 30) {
-  # LasData <- readLidarData(lidarFiles[2], inputCRS)
-  # dem <- createDEM(LasData, resolution)
+projects <- list.dirs(, recursive = F)
+for (p in projects){
+  print(p)
+
+  resPath <- list.dirs(p, recursive = F)
+  print(resPath)
+
+  lidarFiles <- tools::list_files_with_exts(resolutions[1], c("LAS", "las", "LAZ", "laz"))
+  system.time(output10 <- parLapplyLB(cl, lidarFiles, lidarMetrics, resolution = 10, outputDir = resPath[2]))
+  system.time(output25 <- parLapplyLB(cl, lidarFiles, lidarMetrics, resolution = 25, outputDir = resPath[3]))
+  print(lidarFiles)
+}
+
+
+
+lidarMetrics <- function(x, CRS, resolution = 30, outputDir) {
+  LasData <- readLidarData(x, inputCRS)
+  dem <- createDEM(LasData, resolution)
   # dsm <- createDSM(LasData, resolution)
   # LasData <- normalizeByDEM(LasData, dem)
   # LasData <- classifyByHeight(LasData)
@@ -41,14 +54,14 @@ tileMetrics <- function(x, CRS, resolution = 30) {
   # canDensity <- calcCanopyDensity(LasData, resolution)
   # pointCountLayers <- calcHeightPointCounts(LasData, resolution)
   # pointPercentLayers <- calcHeightPointPercents(pointCountLayers, resolution)
-
   tileName <- basename(tools::file_path_sans_ext(x))
+  outputName <- paste(tileName, resolution, "dem.tif", sep = "_")
+  outputFile <- file.path(outputDir, "dem", outputName)
 
-    return(tileName)
-
-  # writeRaster(dem, paste0(tileName, "_dem.tif"))
-  # writeRaster(dsm, paste0(tileName, "_dsm.tif"))
+  writeRaster(dem, outputFile)
 }
 
 
 system.time(output <- parLapply(cl, lidarFiles, tileMetrics, inputCRS, outputRes))
+
+parallel::stopCluster(cl)
