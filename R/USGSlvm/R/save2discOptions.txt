@@ -1,0 +1,4 @@
+file name = NA
+file dir = NA
+file type = HFA
+output type = file, R object, both
