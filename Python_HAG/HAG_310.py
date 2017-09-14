@@ -396,6 +396,7 @@ if __name__ == "__main__":
       ' -last_only'+\
       ' -keep_class 2'+\
       ' -elevation'+\
+      ' -nodata 9999'
       ' -average'
   run_process(CMD)
   img_crs(OutFldr)
@@ -415,7 +416,8 @@ if __name__ == "__main__":
       ' -drop_z_above '+ELEV_MAX+\
       ' -clamp_z_below 0.0'+\
       ' -elevation'+\
-      ' -highest'
+      ' -highest'+\
+      ' -nodata 9999'
   run_process(CMD)
   img_crs(OutFldr)
   time_check(time0,time1) ; time1 = time.time()
@@ -433,7 +435,8 @@ if __name__ == "__main__":
       ' -drop_z_above '+ELEV_MAX+\
       ' -clamp_z_below 0.0'+\
       ' -elevation'+\
-      ' -highest'
+      ' -highest'+\
+      ' -nodata 9999'
   run_process(CMD)
   img_crs(OutFldr)
   time_check(time0,time1) ; time1 = time.time()
@@ -451,7 +454,8 @@ if __name__ == "__main__":
       ' -drop_z_above '+ELEV_MAX+\
       ' -clamp_z_below 0.0'+\
       ' -elevation'+\
-      ' -average'
+      ' -average'+\
+      ' -nodata 9999'
   run_process(CMD)
   img_crs(OutFldr)
   time_check(time0,time1) ; time1 = time.time()
@@ -469,7 +473,8 @@ if __name__ == "__main__":
       ' -drop_z_above '+ELEV_MAX+\
       ' -clamp_z_below 0.0'+\
       ' -elevation'+\
-      ' -std'
+      ' -std'+\
+      ' -nodata 9999'
   run_process(CMD)
   img_crs(OutFldr)
   time_check(time0,time1) ; time1 = time.time()
@@ -506,7 +511,8 @@ if __name__ == "__main__":
       ' -drop_z_above '+ELEV_MAX+\
       ' -clamp_z_below 0.0'+\
       ' -height_cutoff '+CUTOFF+\
-      ' -cov'
+      ' -cov'+\
+      ' -nodata 9999'
   run_process(CMD)
   shutil.move(OutFldr+NAME_PJCT+'_HAG%smCanopyCov_cov.img'%LRG_GRD_SPC,
               OutFldr+NAME_PJCT+'_HAG%smCanopyCov.img'%LRG_GRD_SPC)
@@ -526,7 +532,8 @@ if __name__ == "__main__":
       ' -drop_z_above '+ELEV_MAX+\
       ' -clamp_z_below 0.0'+\
       ' -height_cutoff '+CUTOFF+\
-      ' -dns'
+      ' -dns'+\
+      ' -nodata 9999'
   run_process(CMD)
   shutil.move(OutFldr+NAME_PJCT+'_HAG%smCanopyDens_dns.img'%LRG_GRD_SPC,
               OutFldr+NAME_PJCT+'_HAG%smCanopyDens.img'%LRG_GRD_SPC)
@@ -551,7 +558,8 @@ if __name__ == "__main__":
         ' -drop_z_above '+ELEV_MAX+\
         ' -clamp_z_below 0.0'+\
         ' -height_cutoff '+CUTOFF+\
-        ' -'+STAT
+        ' -'+STAT+\
+        ' -nodata 9999'
     run_process(CMD)
     NDX = NDX+1
   img_crs(OutFldr)
@@ -577,7 +585,8 @@ if __name__ == "__main__":
         ' -drop_z_above '+ELEV_MAX+\
         ' -clamp_z_below 0.0'+\
         ' -height_cutoff '+CUTOFF+\
-        ' -p '+PCTLS
+        ' -p '+PCTLS+\
+        ' -nodata 9999'
     run_process(CMD)
     NDX = NDX-1
   img_crs(OutFldr)
@@ -604,7 +613,8 @@ if __name__ == "__main__":
         ' -drop_z_above '+ELEV_MAX+\
         ' -clamp_z_below 0.0'+\
         ' -height_cutoff '+CUTOFF+\
-        ' -c '+BINS
+        ' -c '+BINS+\
+        ' -nodata 9999'
     run_process(CMD)
     shutil.move(OutFile+'_c00.img',OutFile+'.img')
     NDX = NDX-1
@@ -632,7 +642,8 @@ if __name__ == "__main__":
         ' -drop_z_above '+ELEV_MAX+\
         ' -clamp_z_below 0.0'+\
         ' -height_cutoff '+CUTOFF+\
-        ' -d '+BINS
+        ' -d '+BINS+\
+        ' -nodata 9999'
     run_process(CMD)
     shutil.move(OutFile+'_d00.img',OutFile+'.img')
     NDX = NDX-1
@@ -669,7 +680,8 @@ if __name__ == "__main__":
       ' -last_only'+\
       ' -keep_class 2'+\
       ' -elevation'+\
-      ' -average'
+      ' -average'+\
+      ' -nodata 9999'
   run_process(CMD)
   img_crs(OutFldr)
   time_check(time0,time1) ; time1 = time.time()
@@ -688,7 +700,8 @@ if __name__ == "__main__":
       ' -drop_z_above '+ELEV_MAX+\
       ' -clamp_z_below 0'+\
       ' -elevation'+\
-      ' -highest'
+      ' -highest'+\
+      ' -nodata 9999'
   run_process(CMD)
   img_crs(OutFldr)
   time_check(time0,time1) ; time1 = time.time()
@@ -706,7 +719,8 @@ if __name__ == "__main__":
       ' -drop_z_above '+ELEV_MAX+\
       ' -clamp_z_below 0'+\
       ' -elevation'+\
-      ' -highest'
+      ' -highest'+\
+      ' -nodata 9999'
   run_process(CMD)
   img_crs(OutFldr)
   time_check(time0,time1) ; time1 = time.time()
@@ -724,7 +738,8 @@ if __name__ == "__main__":
       ' -drop_z_above '+ELEV_MAX+\
       ' -clamp_z_below 0'+\
       ' -elevation'+\
-      ' -average'
+      ' -average'+\
+      ' -nodata 9999'
   run_process(CMD)
   img_crs(OutFldr)
   time_check(time0,time1) ; time1 = time.time()
@@ -742,7 +757,8 @@ if __name__ == "__main__":
       ' -drop_z_above '+ELEV_MAX+\
       ' -clamp_z_below 0'+\
       ' -elevation'+\
-      ' -std'
+      ' -std'+\
+      ' -nodata 9999'
   run_process(CMD)
   img_crs(OutFldr)
   time_check(time0,time1) ; time1 = time.time()
@@ -779,7 +795,8 @@ if __name__ == "__main__":
       ' -drop_z_above '+ELEV_MAX+\
       ' -clamp_z_below 0'+\
       ' -height_cutoff '+CUTOFF+\
-      ' -cov'
+      ' -cov'+\
+      ' -nodata 9999'
 ##########  run_process(CMD)
   shutil.move(OutFldr+NAME_PJCT+'_HAG%smCanopyCov_cov.img'%SML_GRD_SPC,
               OutFldr+NAME_PJCT+'_HAG%smCanopyCov.img'%SML_GRD_SPC)
@@ -799,7 +816,8 @@ if __name__ == "__main__":
       ' -drop_z_above '+ELEV_MAX+\
       ' -clamp_z_below 0'+\
       ' -height_cutoff '+CUTOFF+\
-      ' -dns'
+      ' -dns'+\
+      ' -nodata 9999'
   run_process(CMD)
   shutil.move(OutFldr+NAME_PJCT+'_HAG%smCanopyDens_dns.img'%SML_GRD_SPC,
               OutFldr+NAME_PJCT+'_HAG%smCanopyDens.img'%SML_GRD_SPC)
@@ -824,7 +842,8 @@ if __name__ == "__main__":
         ' -drop_z_above '+ELEV_MAX+\
         ' -clamp_z_below 0'+\
         ' -height_cutoff '+CUTOFF+\
-        ' -'+STAT
+        ' -'+STAT+\
+        ' -nodata 9999'
     run_process(CMD)
     NDX = NDX+1
   img_crs(OutFldr)
@@ -850,7 +869,8 @@ if __name__ == "__main__":
         ' -drop_z_above '+ELEV_MAX+\
         ' -clamp_z_below 0.0'+\
         ' -height_cutoff '+CUTOFF+\
-        ' -p '+PCTLS
+        ' -p '+PCTLS+\
+        ' -nodata 9999'
     run_process(CMD)
     NDX = NDX-1
   img_crs(OutFldr)
@@ -877,7 +897,8 @@ if __name__ == "__main__":
         ' -drop_z_above '+ELEV_MAX+\
         ' -clamp_z_below 0.0'+\
         ' -height_cutoff '+CUTOFF+\
-        ' -c '+BINS
+        ' -c '+BINS+\
+        ' -nodata 9999'
     run_process(CMD)
     shutil.move(OutFile+'_c00.img',OutFile+'.img')
     NDX = NDX-1
@@ -905,7 +926,8 @@ if __name__ == "__main__":
         ' -drop_z_above '+ELEV_MAX+\
         ' -clamp_z_below 0.0'+\
         ' -height_cutoff '+CUTOFF+\
-        ' -d '+BINS
+        ' -d '+BINS+\
+        ' -nodata 9999'
     run_process(CMD)
     shutil.move(OutFile+'_d00.img',OutFile+'.img')
     NDX = NDX-1
