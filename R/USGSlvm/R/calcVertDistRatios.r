@@ -14,7 +14,7 @@
 #'@export
 
 calcVertDistRatio <- function(x, outputDir, tileName, resolution = 30, pointClasses = c(100:200)){
-  percLayer <- calcHeightPercentiles(x, resolution = resolution, percentiles = c(.50, .98, 1.0))
+  percLayer <- calcHeightPercentiles(x, "C:/temp", "temp", resolution = resolution, percentiles = c(.50, .98, 1.0))
   x <- x[x$Classification %in% pointClasses, ]
   vdr98 <- (percLayer$X98 - percLayer$X50) / percLayer$X98
 

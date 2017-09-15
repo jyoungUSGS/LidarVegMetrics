@@ -24,7 +24,7 @@ calcHeightPointPercents <- function(x, outputDir, tileName, resolution = 30, bin
   pcSumLayer <- sum(pcLayer, na.rm=T)
   percentLayer <- pcLayer / pcSumLayer * 100
 
-  prod <- "hcntpct"
+  prod <- "hdens"
   outputFile <- file.path(outputDir, prod, paste(tileName, paste(prod,".tif", sep = ""), sep = "_"))
   raster::writeRaster(percentLayer, outputFile)
   return(percentLayer)

@@ -18,9 +18,9 @@
 
 calcCanopyDensity <- function(x, outputDir, tileName, resolution = 30, pointClasses = c(100:200)) {
   r <- raster::raster(x, resolution = resolution)
-  allRast <- raster::rasterize(x@coords, r, x$Z, fun='count')
+  allRast <- raster::rasterize(x@coords, r, x$Z_agl, fun='count')
   x <- x[x$Classification %in% pointClasses, ]
-  vegRast <- raster::rasterize(x@coords, r, x$Z, fun='count')
+  vegRast <- raster::rasterize(x@coords, r, x$Z_agl, fun='count')
   canDenRast <- vegRast / allRast * 100
 
   prod <- "cdens"

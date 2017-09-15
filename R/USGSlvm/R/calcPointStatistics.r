@@ -24,6 +24,11 @@ calcPointStatistics <- function(x, outputDir, tileName, resolution = 30,
       sqrt(mean(x^2))
   }
 
+  minRast <- raster::rasterize(x@coords, r, field = x$Z_agl, fun=min)
+  prod <- "hmin"
+  outputFile <- file.path(outputDir, prod, paste(tileName, paste(prod,".tif", sep = ""), sep = "_"))
+  raster::writeRaster(minRast, outputFile)
+
   maxRast <- raster::rasterize(x@coords, r, field = x$Z_agl, fun=max)
   prod <- "hmax"
   outputFile <- file.path(outputDir, prod, paste(tileName, paste(prod,".tif", sep = ""), sep = "_"))
@@ -55,7 +60,7 @@ calcPointStatistics <- function(x, outputDir, tileName, resolution = 30,
   raster::writeRaster(qMeanRast, outputFile)
 
 
-  layerList <- list(maxRast, meanRast, sdRast, skewRast, kurtRast, qMeanRast)
-  names(layerList) <- c("max", "mean", "stdev", "skewness", "kurtosis", "quad mean")
+  layerList <- list(minRast, maxRast, meanRast, sdRast, skewRast, kurtRast, qMeanRast)
+  names(layerList) <- c("min", "max", "mean", "stdev", "skewness", "kurtosis", "quad mean")
   return(layerList)
 }
