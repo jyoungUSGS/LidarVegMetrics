@@ -15,7 +15,8 @@
 #'@importFrom raster raster rasterize
 #'@importFrom moments skewness kurtosis
 
-calcPointStatistics <- function(x, resolution = 30, pointClasses = c(100:200)){
+calcPointStatistics <- function(x, outputDir, tileName, resolution = 30,
+                                pointClasses = c(100:200)){
   r <- raster::raster(x, resolution = resolution)
   x <- x[x$Classification %in% pointClasses,]
 
@@ -24,11 +25,35 @@ calcPointStatistics <- function(x, resolution = 30, pointClasses = c(100:200)){
   }
 
   maxRast <- raster::rasterize(x@coords, r, field = x$Z_agl, fun=max)
+  prod <- "hmax"
+  outputFile <- file.path(outputDir, prod, paste(tileName, paste(prod,".tif", sep = ""), sep = "_"))
+  raster::writeRaster(maxRast, outputFile)
+
   meanRast <- raster::rasterize(x@coords, r, field = x$Z_agl, fun=mean)
+  prod <- "havg"
+  outputFile <- file.path(outputDir, prod, paste(tileName, paste(prod,".tif", sep = ""), sep = "_"))
+  raster::writeRaster(meanRast, outputFile)
+
   sdRast <- raster::rasterize(x@coords, r, field = x$Z_agl, fun=sd)
+  prod <- "hstd"
+  outputFile <- file.path(outputDir, prod, paste(tileName, paste(prod,".tif", sep = ""), sep = "_"))
+  raster::writeRaster(sdRast, outputFile)
+
   skewRast <- raster::rasterize(x@coords, r, field = x$Z_agl, fun=moments::skewness)
+  prod <- "hske"
+  outputFile <- file.path(outputDir, prod, paste(tileName, paste(prod,".tif", sep = ""), sep = "_"))
+  raster::writeRaster(skewRast, outputFile)
+
   kurtRast <- raster::rasterize(x@coords, r, field = x$Z_agl, fun=moments::kurtosis)
+  prod <- "hkur"
+  outputFile <- file.path(outputDir, prod, paste(tileName, paste(prod,".tif", sep = ""), sep = "_"))
+  raster::writeRaster(kurtRast, outputFile)
+
   qMeanRast <- raster::rasterize(x@coords, r, field = x$Z_agl, fun=qMean)
+  prod <- "hqav"
+  outputFile <- file.path(outputDir, prod, paste(tileName, paste(prod,".tif", sep = ""), sep = "_"))
+  raster::writeRaster(qMeanRast, outputFile)
+
 
   layerList <- list(maxRast, meanRast, sdRast, skewRast, kurtRast, qMeanRast)
   names(layerList) <- c("max", "mean", "stdev", "skewness", "kurtosis", "quad mean")

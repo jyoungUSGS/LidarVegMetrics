@@ -16,8 +16,9 @@
 #'@export
 #'@importFrom raster raster rasterize addLayer
 
-calcHeightPointCounts <- function(x, resolution = 30, binHeight = NA,
-                                  binCount = 3, pointClasses = c(100:200)){
+calcHeightPointCounts <- function(x, outputDir, tileName, resolution = 30,
+                                  binHeight = NA, binCount = 3,
+                                  pointClasses = c(100:200)){
   r <- raster::raster(x, resolution = resolution)
   pcStack <- raster::raster(x, resolution = resolution)
   x <- x[x$Classification %in% pointClasses, ]
@@ -32,11 +33,15 @@ calcHeightPointCounts <- function(x, resolution = 30, binHeight = NA,
   for (i in 1:binCount){
     bottom <- bottom
     top <- bottom + binHeight
-    countRast <- raster::rasterize(x@coords[bottom <= x$Z_agl & x$Z_agl < top , ],
-                                   r, field = x$Z_agl[bottom < x$Z_agl & x$Z_agl < top],
-                                   fun='count')
+    countRast <- raster::rasterize(x@coords[bottom <= x$Z_agl & x$Z_agl < top,
+                                   ], r, field = x$Z_agl[bottom < x$Z_agl &
+                                   x$Z_agl < top], fun='count')
     pcStack <- raster::addLayer(pcStack, countRast)
     bottom <- top
   }
+
+  prod <- "hcnt"
+  outputFile <- file.path(outputDir, prod, paste(tileName, paste(prod,".tif", sep = ""), sep = "_"))
+  raster::writeRaster(pcStack, outputFile)
   return(pcStack)
-  }
+}

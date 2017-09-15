@@ -15,7 +15,7 @@
 #'
 #'@export
 
-calcHeightPointPercents <- function(x, resolution = 30, binHeight = NA, binCount = 3, pointClasses = c(100:200)){
+calcHeightPointPercents <- function(x, outputDir, tileName, resolution = 30, binHeight = NA, binCount = 3, pointClasses = c(100:200)){
   if (class(x) == "SpatialPointsDataFrame"){
     pcLayer <- heightPointCounts(x, resolution = resolution, binHeight, binCount, pointClasses)
   } else {
@@ -23,5 +23,9 @@ calcHeightPointPercents <- function(x, resolution = 30, binHeight = NA, binCount
   }
   pcSumLayer <- sum(pcLayer, na.rm=T)
   percentLayer <- pcLayer / pcSumLayer * 100
+
+  prod <- "hcntpct"
+  outputFile <- file.path(outputDir, prod, paste(tileName, paste(prod,".tif", sep = ""), sep = "_"))
+  raster::writeRaster(percentLayer, outputFile)
   return(percentLayer)
 }

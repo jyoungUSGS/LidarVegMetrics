@@ -15,7 +15,10 @@
 #'@export
 #'@importFrom raster raster rasterize addLayer
 
-calcHeightPercentiles <- function(x, resolution = 30, percentiles = c(.10, .20, .30, .40, .50, .60, .70, .80, .90, .98), pointClasses = c(100:200)){
+calcHeightPercentiles <- function(x, outputDir, tileName, resolution = 30,
+                                  percentiles = c(.10, .20, .30, .40, .50, .60,
+                                  .70, .80, .90, .98),
+                                  pointClasses = c(100:200)){
   tile_raster <- raster::raster(x, resolution = resolution)
   perc_stack <- raster::raster(x, resolution = resolution)
   x <- x[x$Classification %in% pointClasses, ]
@@ -26,5 +29,10 @@ calcHeightPercentiles <- function(x, resolution = 30, percentiles = c(.10, .20, 
   }
   perc_names <- as.character(percentiles*100)
   names(perc_stack) <- perc_names
+
+  prod <- "hpct"
+  outputFile <- file.path(outputDir, prod, paste(tileName, paste(prod,".tif", sep = ""), sep = "_"))
+  raster::writeRaster(perc_stack, outputFile)
+
   return(perc_stack)
 }

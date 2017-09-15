@@ -10,7 +10,6 @@
 #'@author Nicholas Kruskamp
 #'@examples
 #'
-#'@export
 #'@importFrom raster raster xyFromCell ncell setValues
 #'@importFrom sp coordinates
 #'@importFrom gstat variogram fit.variogram krige
