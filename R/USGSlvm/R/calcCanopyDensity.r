@@ -16,15 +16,12 @@
 #'@export
 #'@importFrom raster raster rasterize
 
-calcCanopyDensity <- function(x, outputDir, tileName, resolution = 30, pointClasses = c(100:200)) {
+calcCanopyDensity <- function(x, resolution = 30, pointClasses = c(100:200)) {
   r <- raster::raster(x, resolution = resolution)
-  allRast <- raster::rasterize(x@coords, r, x$Z_agl, fun='count')
+  allRast <- raster::rasterize(x@coords, r, x$Z_agl, fun = "count")
   x <- x[x$Classification %in% pointClasses, ]
-  vegRast <- raster::rasterize(x@coords, r, x$Z_agl, fun='count')
+  vegRast <- raster::rasterize(x@coords, r, x$Z_agl, fun = "count")
   canDenRast <- vegRast / allRast * 100
 
-  prod <- "cdens"
-  outputFile <- file.path(outputDir, prod, paste(tileName, paste(prod,".tif", sep = ""), sep = "_"))
-  raster::writeRaster(canDenRast, outputFile)
   return(canDenRast)
 }
