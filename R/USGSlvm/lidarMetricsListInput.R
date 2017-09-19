@@ -1,134 +1,111 @@
-library(rlas)
-library(sp)
 library(raster)
-library(rgdal)
-library(data.table)
 library(gstat)
 library(USGSlvm)
 library(tools)
 library(parallel)
 
-
 # USER PARAMETERS
-# location of lidar files
-setwd("P:/geospatial/Research/rkmeente/SOD/CAL_OR_border/Baselayers/Elevation")
+# location of PROJECT
+setwd("C:/Temp/CONUS/Project1")
 
 # CRS of lidar files
 inputCRS <- "+proj=utm +zone=17 +ellps=GRS80 +datum=NAD83 +units=m +no_defs"
 
-# directory for output (ALL rasters)
-outputDir <- "./metrics"
 # normalized points under this value in native units
 # of lidar files will not be considered as vegetation
 dbh <<- 1.37
 vegetationFloor <- dbh
 # normalized points above this value in native units
-#  of lidar files will not be considered as vegetation
+# of lidar files will not be considered as vegetation
 heightCeiling <- 200
 
 # =============================================================================
 
-lidarFiles <- tools::list_files_with_exts(basename("./Lidar"), c("LAS", "las",
-                                                                 "LAZ", "laz"))
+create_project_structure <- function(){
+  dir.create("./Veg")
 
-lidarMetrics <- function(x, CRS, outputDir, resolution){
+  dir.create("./Veg/10m")
+  dir.create("./Veg/10m/canopy")
+  dir.create("./Veg/10m/height")
+  dir.create("./Veg/10m/stats")
+  dir.create("./Veg/10m/ratios")
 
-   format_tile_name <- function(x){
+  dir.create("./Veg/25m")
+  dir.create("./Veg/25m/canopy")
+  dir.create("./Veg/25m/height")
+  dir.create("./Veg/25m/stats")
+  dir.create("./Veg/25m/ratios")
+}
+
+create_project_structure()
+lidarFiles <- tools::list_files_with_exts("./LAZ/hght",
+                                          c("LAS", "las", "LAZ", "laz"))
+
+outputDirs <- list.dirs("./Veg", recursive = F)
+
+lidarMetrics <- function(x, CRS, outputDir, resolution, nrml = F){
+
+  format_tile_name <- function(x){
      tn <- basename(tools::file_path_sans_ext(x))
      np <- strsplit(tn, "_")
      tn <- paste0(unlist(np[[1]][-6]), collapse = "_")
      tn <- paste(tn, resolution, sep = "_")
      return(tn)
    }
-   tileName <- format_tile_name(x)
+  tileName <- format_tile_name(x)
+
+  save_output <- function(ouputDir, folder, tileName, product, file){
+    outputPath <- file.path(outputDir, folder, paste(tileName, paste(product,
+      ".tif", sep = ""), sep = "_"))
+    raster::writeRaster(file, outputPath)
+  }
 
    # data load with CRS
    lasData <- USGSlvm::readLidarData(x, CRS)
 
-   # Input z values are already normalized, rename Z to reflect OR...
-  #  names(lasData)[1] <- "Z_agl"
-   # normalize elevation values
-   lasData <- normalizeByDEM(lasData, resolution = resolution)
+   if (nrml){
+     names(lasData)[1] <- "Z_agl"
+   } else {
+     lasData <- USGSlvm::normalizeByDEM(lasData, resolution)
+   }
 
    # if data does not fall within range, class as noise
-   lasData$Classification[vegetationFloor > lasData$Z_agl & lasData$Z_agl > heightCeiling] <- 7
+   lasData$Classification[lasData$Classification == 1 &
+                          vegetationFloor > lasData$Z_agl |
+                          lasData$Z_agl > heightCeiling] <- 7
 
    # classify the points by height above ground
    lasData <- USGSlvm::classifyByHeight(lasData)
 
    # metrics functions
    lasStatLayers <- USGSlvm::calcPointStatistics(lasData, resolution)
-   prod <- "hmin"
-   outputFile <- file.path(outputDir, paste(tileName, paste(prod, ".tif",
-                                                  sep = ""), sep = "_"))
-   raster::writeRaster(lasStatLayers[1], outputFile)
-   prod <- "hmax"
-   outputFile <- file.path(outputDir, paste(tileName, paste(prod, ".tif",
-                                                  sep = ""), sep = "_"))
-   raster::writeRaster(lasStatLayers[2], outputFile)
-   prod <- "havg"
-   outputFile <- file.path(outputDir, paste(tileName, paste(prod, ".tif",
-                                                  sep = ""), sep = "_"))
-   raster::writeRaster(lasStatLayers[3], outputFile)
-   prod <- "hstd"
-   outputFile <- file.path(outputDir, paste(tileName, paste(prod, ".tif",
-                                                   sep = ""), sep = "_"))
-   raster::writeRaster(lasStatLayers[4], outputFile)
-   prod <- "hske"
-   outputFile <- file.path(outputDir, paste(tileName, paste(prod, ".tif",
-                                                  sep = ""), sep = "_"))
-   raster::writeRaster(lasStatLayers[5], outputFile)
-   prod <- "hkur"
-   outputFile <- file.path(outputDir, paste(tileName, paste(prod, ".tif",
-                                                  sep = ""), sep = "_"))
-   raster::writeRaster(lasStatLayers[6], outputFile)
-   prod <- "hqav"
-   outputFile <- file.path(outputDir, paste(tileName, paste(prod, ".tif",
-                                                  sep = ""), sep = "_"))
-   raster::writeRaster(lasStatLayers[7], outputFile)
+   save_output(outputDir, "stats", tileName, "hmin", lasStatLayers$hmin)
+   save_output(outputDir, "stats", tileName, "hmax", lasStatLayers$hmax)
+   save_output(outputDir, "stats", tileName, "havg", lasStatLayers$havg)
+   save_output(outputDir, "stats", tileName, "hstd", lasStatLayers$hstd)
+   save_output(outputDir, "stats", tileName, "hske", lasStatLayers$hske)
+   save_output(outputDir, "stats", tileName, "hkur", lasStatLayers$hkur)
+   save_output(outputDir, "stats", tileName, "hqav", lasStatLayers$hqav)
 
-   percentileLayers <- USGSlvm::calcHeightPercentiles(lasData, resolution)
-   prod <- "hpct"
-   outputFile <- file.path(outputDir, paste(tileName, paste(prod, ".tif",
-                                                  sep = ""), sep = "_"))
-   raster::writeRaster(percentileLayers, outputFile)
+   vdr <- USGSlvm::calcVertDistRatio(lasData, resolution)
+   save_output(outputDir, "ratios", tileName, "vdr98", vdr$vdr98)
+   save_output(outputDir, "ratios", tileName, "vdr100", vdr$vdr100)
 
-   vdRatioLayers <- USGSlvm::calcVertDistRatio(lasData, resolution)
-   prod <- "vdr98"
-   outputFile <- file.path(outputDir, paste(tileName, paste(prod, ".tif",
-                                                  sep = ""), sep = "_"))
-   raster::writeRaster(vdRatioLayers[1], outputFile)
-   prod <- "vdr100"
-   outputFile <- file.path(outputDir, paste(tileName, paste(prod, ".tif",
-                                                  sep = ""), sep = "_"))
-   raster::writeRaster(vdRatioLayers[1], outputFile)
+   ccov <- USGSlvm::calcCanopyCover(lasData, resolution)
+   save_output(outputDir, "canopy", tileName, "ccov", ccov)
 
-   canCover <- USGSlvm::calcCanopyCover(lasData, resolution)
-   prod <- "ccov"
-   outputFile <- file.path(outputDir, paste(tileName, paste(prod, ".tif",
-                                                  sep = ""), sep = "_"))
-   raster::writeRaster(canCover, outputFile)
+   cdens <- USGSlvm::calcCanopyDensity(lasData, resolution)
+   save_output(outputDir, "canopy", tileName, "cdens", cdens)
 
-   canDensity <- USGSlvm::calcCanopyDensity(lasData, resolution)
-   prod <- "cdens"
-   outputFile <- file.path(outputDir, paste(tileName, paste(prod, ".tif",
-                                                  sep = ""), sep = "_"))
-   raster::writeRaster(canDensity, outputFile)
+   hpct <- USGSlvm::calcHeightPercentiles(lasData, resolution)
+   save_output(outputDir, "height", tileName, "hpct", hpct)
 
-   pointCountLayers <- USGSlvm::calcHeightPointCounts(lasData, resolution)
-   prod <- "hcnt"
-   outputFile <- file.path(outputDir, paste(tileName, paste(prod, ".tif",
-                                                  sep = ""), sep = "_"))
-   raster::writeRaster(pointCountLayers, outputFile)
+   hcnt <- USGSlvm::calcHeightPointCounts(lasData, resolution)
+   save_output(outputDir, "height", tileName, "hcnt", hcnt)
 
-   pointPercentLayers <- USGSlvm::calcHeightPointPercents(pointCountLayers,
-                                                          resolution)
-   prod <- "hdens"
-   outputFile <- file.path(outputDir, paste(tileName, paste(prod, ".tif",
-                                                  sep = ""), sep = "_"))
-   raster::writeRaster(pointPercentLayers, outputFile)
+   hdens <- USGSlvm::calcHeightPointPercents(hcnt, resolution)
+   save_output(outputDir, "height", tileName, "hdens", hdens)
 }
-
 
 numClus <- detectCores()
 cl <- makeCluster(numClus - 1)
@@ -139,6 +116,12 @@ clPackage <- clusterEvalQ(cl, {
                           })
 clusterExport(cl, c("vegetationFloor", "heightCeiling"))
 
-system.time(output25 <- parLapplyLB(cl, lidarFiles, lidarMetrics,
-                                    CRS = inputCRS, outputDir = outputDir,
-                                    resolution = 25))
+system.time(trash <- parLapplyLB(cl, lidarFiles, lidarMetrics,
+                                    CRS = inputCRS, outputDir = outputDirs[1],
+                                    resolution = 10, nrml = T))
+system.time(trash <- parLapplyLB(cl, lidarFiles, lidarMetrics,
+                                    CRS = inputCRS, outputDir = outputDirs[2],
+                                    resolution = 25, nrml = T))
+
+rm(trash)
+stopCluster(cl)

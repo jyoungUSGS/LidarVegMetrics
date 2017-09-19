@@ -4,18 +4,20 @@
 \alias{normalizeByDEM}
 \title{normalize values by height above group from a digital elevation model.}
 \usage{
-normalizeByDEM(x, y)
+normalizeByDEM(x, y, resolution)
 }
 \arguments{
 \item{A}{SpatialPointsDataFrame containing lidar data, at minimum X, Y, and Z values.}
 
 \item{A}{raster dem.}
+
+\item{Resolution}{of DEM if calculated on the fly}
 }
 \value{
 Returns the SpatialPointsDataFrame with an additional vector of normalized Z values.
 }
 \description{
-This function finds the difference between a non-ground point Z elevation and the coincident cell value Z in X Y space.
+This is a hasty function to find the difference between a non-ground point Z elevation and the coincident cell value Z in X Y space. This quickly computes a dem on the fly be finding the mean ground value by cell. It may contain NA values. It is recommended to use your own DEM for this function.
 }
 \examples{
 

@@ -16,7 +16,7 @@
 classifyByHeight <- function(x, binHeight = 5, binCount = NA){
     # x <- x[x$Classification %in% pointClasses,]
 
-    maxAgl <- max(x$Z_agl[x$Classification %in% c(0,1)], na.rm=TRUE)
+    maxAgl <- max(x$Z_agl[x$Classification == 1], na.rm=TRUE)
 
     if (is.na(binHeight)) {
       binHeight <- maxAgl / binCount
@@ -24,19 +24,13 @@ classifyByHeight <- function(x, binHeight = 5, binCount = NA){
       binCount <- ceiling(maxAgl / binHeight)
     }
 
-    if (binCount > 3){
-      message("More than 3 height bins requested")
-      message("using custom classification starting at 101")
-      vegClass = 101
-    } else{
-      vegClass = 3
-    }
+    vegClass <- 101
 
     bottom <- 0
     for (i in 1:binCount){
       bottom <- bottom
       top <- bottom + binHeight
-      x$Classification[bottom <= x$Z_agl & x$Z_agl < top & x$Classification %in% c(0,1)] <- vegClass
+      x$Classification[bottom <= x$Z_agl & x$Z_agl < top & x$Classification == 1] <- vegClass
 
       bottom <- top
       vegClass <- vegClass + 1

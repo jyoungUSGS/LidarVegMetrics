@@ -15,15 +15,15 @@
 #'@importFrom raster raster rasterize focalWeight focal extract
 
 normalizeByDEM <- function(x, y = NA, resolution = 30){
-  if (is.na(y)){
+  if (class(y) != "RasterLayer"){
     gp <- x[x$Classification == 2, 1]
     r <- raster::raster(x, resolution = resolution)
     r_xy <- as.data.frame(raster::xyFromCell(r, 1:raster::ncell(r)))
     names(r_xy) <- c("X", "Y")
     sp::coordinates(r_xy) <- ~ X + Y
     sp::proj4string(r_xy) <- gp@proj4string
-    v <- gstat::idw.spatial(Z~1, gp, r_xy)
-    y <- raster::rasterize(v, r, v$v1.pred)
+    v <- gstat::idw(Z~1, gp, r_xy)
+    y <- raster::rasterize(v, r, v$var1.pred)
   }
 
     Z_g <- raster::extract(y, x)

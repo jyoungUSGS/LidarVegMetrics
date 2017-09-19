@@ -15,8 +15,8 @@
 #'
 #'@export
 
-calcHeightPointPercents <- function(x, resolution = 30, binHeight = NA,
-                                    binCount = 3, pointClasses = c(100:200)){
+calcHeightPointPercents <- function(x, resolution = 30, binHeight = 5,
+                                    binCount = NA, pointClasses = c(100:200)){
   if (class(x) == "SpatialPointsDataFrame"){
     pcLayer <- USGSlvm::heightPointCounts(x, resolution = resolution, binHeight,
                                           binCount, pointClasses)

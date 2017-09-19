@@ -16,8 +16,8 @@
 #'@export
 #'@importFrom raster raster rasterize addLayer
 
-calcHeightPointCounts <- function(x, resolution = 30, binHeight = NA,
-                                  binCount = 3, pointClasses = c(100:200)){
+calcHeightPointCounts <- function(x, resolution = 30, binHeight = 5,
+                                  binCount = NA, pointClasses = c(100:200)){
   r <- raster::raster(x, resolution = resolution)
   pcStack <- raster::raster(x, resolution = resolution)
   x <- x[x$Classification %in% pointClasses, ]

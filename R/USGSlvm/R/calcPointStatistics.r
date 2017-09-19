@@ -32,6 +32,6 @@ calcPointStatistics <- function(x, resolution = 30, pointClasses = c(100:200)){
   qMeanRast <- raster::rasterize(x@coords, r, field = x$Z_agl, fun = qMean)
 
   layerList <- list(minRast, maxRast, meanRast, sdRast, skewRast, kurtRast, qMeanRast)
-  names(layerList) <- c("min", "max", "mean", "stdev", "skewness", "kurtosis", "quad mean")
+  names(layerList) <- c("hmin", "hmax", "havg", "hstd", "hske", "hkur", "hqav")
   return(layerList)
 }
