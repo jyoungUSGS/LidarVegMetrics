@@ -12,7 +12,7 @@
 #'@examples
 #'
 #' @export
-#'@importFrom raster raster rasterize focalWeight focal extract
+#'@importFrom raster raster rasterize focal extract
 
 normalizeByDEM <- function(x, y = NA, resolution = 30){
   if (class(y) != "RasterLayer"){
@@ -20,22 +20,9 @@ normalizeByDEM <- function(x, y = NA, resolution = 30){
 
     r <- raster::raster(x, resolution = resolution)
 
-    dem_mean <- raster::rasterize(gp, r, gp$Z, fun = mean)
-    mean_vals <- as.data.frame(raster::xyFromCell(dem_mean,
-      1:raster::ncell(dem_mean)))
-    names(mean_vals) <- c("x", "y")
-    mean_vals$z <- raster::getValues(dem_mean)
-    mean_vals <- mean_vals[!(is.na(mean_vals$z)), ]
-    sp::coordinates(mean_vals) <- ~ x + y
-    sp::proj4string(mean_vals) <- gp@proj4string
-
-    pred_vals <- as.data.frame(raster::xyFromCell(r, 1:raster::ncell(r)))
-    names(pred_vals) <- c("x", "y")
-    sp::coordinates(pred_vals) <- ~ x + y
-    sp::proj4string(pred_vals) <- gp@proj4string
-
-    pred <- gstat::idw(Z~1, gp, pred_vals)
-    y <- raster::rasterize(pred, r, pred$var1.pred)
+    y <- raster::rasterize(gp, r, gp$Z, fun = mean)
+    y <- raster::focal(y, w = matrix(1, 7, 7), fun = mean, na.rm = T, pad = T,
+      NAonly = T)
   }
 
     z_g <- raster::extract(y, x)

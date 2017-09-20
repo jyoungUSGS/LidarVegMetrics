@@ -1,12 +1,11 @@
 library(raster)
-library(gstat)
 library(USGSlvm)
 library(tools)
 library(parallel)
 
 # USER PARAMETERS
 # location of PROJECT
-setwd("P:/geospatial/Research/rkmeente/SOD/CAL_OR_border/Baselayers/Elevation")
+setwd("D:/nfkruska")
 
 # CRS of lidar files
 # EPSG: 2992
@@ -39,7 +38,7 @@ create_project_structure <- function(){
 }
 
 create_project_structure()
-lidarFiles <- tools::list_files_with_exts("./LAZ",
+lidarFiles <- tools::list_files_with_exts("./Lidar",
                                           c("LAS", "las", "LAZ", "laz"))
 
 outputDirs <- list.dirs("./Veg", recursive = F)
@@ -112,8 +111,8 @@ numClus <- detectCores()
 cl <- makeCluster(numClus - 1)
 clPackage <- clusterEvalQ(cl, {
                           library(rlas); library(sp); library(raster);
-                          library(rgdal); library(data.table); library(gstat);
-                          library(USGSlvm); library(tools); library(parallel)
+                          library(rgdal); library(data.table); library(USGSlvm);
+                          library(tools); library(parallel)
                           })
 clusterExport(cl, c("vegetationFloor", "heightCeiling"))
 
