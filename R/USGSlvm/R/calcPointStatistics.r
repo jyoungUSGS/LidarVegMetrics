@@ -12,7 +12,7 @@
 #'@examples
 #'
 #'@export
-#'@importFrom raster raster rasterize
+#'@importFrom raster raster rasterize stack
 #'@importFrom moments skewness kurtosis
 
 calcPointStatistics <- function(x, resolution = 30, pointClasses = c(100:200)){
@@ -31,7 +31,7 @@ calcPointStatistics <- function(x, resolution = 30, pointClasses = c(100:200)){
   kurtRast <- raster::rasterize(x@coords, r, field = x$Z_agl, fun = moments::kurtosis)
   qMeanRast <- raster::rasterize(x@coords, r, field = x$Z_agl, fun = qMean)
 
-  layerList <- list(minRast, maxRast, meanRast, sdRast, skewRast, kurtRast, qMeanRast)
-  names(layerList) <- c("hmin", "hmax", "havg", "hstd", "hske", "hkur", "hqav")
-  return(layerList)
+  s <- raster::stack(minRast, maxRast, meanRast, sdRast, skewRast, kurtRast, qMeanRast)
+  names(s) <- c("hmin", "hmax", "havg", "hstd", "hske", "hkur", "hqav")
+  return(s)
 }

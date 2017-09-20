@@ -19,7 +19,7 @@ calcVertDistRatio <- function(x, resolution = 30, pointClasses = c(100:200)){
   vdr98 <- (percLayer$X98 - percLayer$X50) / percLayer$X98
   vdr100 <- (percLayer$X100 - percLayer$X50) / percLayer$X100
 
-  layer_list <- list(vdr98, vdr100)
-  names(layer_list) <- c("vdr98", "vdr100")
-  return(layer_list)
+  s <- raster::stack(vdr98, vdr100)
+  names(s) <- c("vdr98", "vdr100")
+  return(s)
   }

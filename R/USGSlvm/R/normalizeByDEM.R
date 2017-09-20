@@ -25,7 +25,7 @@ normalizeByDEM <- function(x, y = NA, resolution = 30){
       NAonly = T)
   }
 
-    z_g <- raster::extract(y, x)
-    x$Z_agl <- x$Z - z_g
+    x$z_g <- raster::extract(y, x)
+    x$Z_agl <- x$Z - x$z_g
     return(x)
 }

@@ -6,7 +6,7 @@ library(parallel)
 # USER PARAMETERS
 # location of PROJECT
 setwd("D:/nfkruska")
-
+setwd("P:/geospatial/Research/rkmeente/SOD/CAL_OR_border/Baselayers/Elevation")
 # CRS of lidar files
 # EPSG: 2992
 inputCRS <- "+proj=lcc +lat_1=43 +lat_2=45.5 +lat_0=41.75 +lon_0=-120.5 +x_0=399999.9999984 +y_0=0 +ellps=GRS80 +datum=NAD83 +to_meter=0.3048 +no_defs"
@@ -36,9 +36,9 @@ create_project_structure <- function(){
   dir.create("./Veg/25m/stats")
   dir.create("./Veg/25m/ratios")
 }
-
 create_project_structure()
-lidarFiles <- tools::list_files_with_exts("./Lidar",
+
+lidarFiles <- tools::list_files_with_exts("./LAZ",
                                           c("LAS", "las", "LAZ", "laz"))
 
 outputDirs <- list.dirs("./Veg", recursive = F)
@@ -77,7 +77,7 @@ lidarMetrics <- function(x, CRS, outputDir, resolution, nrml = F){
    # classify the points by height above ground
    lasData <- USGSlvm::classifyByHeight(lasData)
 
-   # metrics functions
+  #  # metrics functions
    lasStatLayers <- USGSlvm::calcPointStatistics(lasData, resolution)
    save_output(outputDir, "stats", tileName, "hmin", lasStatLayers$hmin)
    save_output(outputDir, "stats", tileName, "hmax", lasStatLayers$hmax)
