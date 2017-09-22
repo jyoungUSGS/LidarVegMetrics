@@ -24,31 +24,14 @@ ras_fmt <- "HFA"
 setwd(project_dir)
 lidar_files <- tools::list_files_with_exts(lidar_dir,
                                           c("LAS", "las", "LAZ", "laz"))
-
-create_veg_structure <- function(){
-  dir.create("./Veg")
-  dir.create("./stacks")
-
-  dir.create("./Veg/10m")
-  dir.create("./Veg/10m/canopy")
-  dir.create("./Veg/10m/height_pct")
-  dir.create("./Veg/10m/height_cnt")
-  dir.create("./Veg/10m/height_den")
-  dir.create("./Veg/10m/stats")
-  dir.create("./Veg/10m/ratios")
-
-  dir.create("./Veg/25m")
-  dir.create("./Veg/25m/canopy")
-  dir.create("./Veg/25m/height_pct")
-  dir.create("./Veg/25m/height_cnt")
-  dir.create("./Veg/25m/height_den")
-  dir.create("./Veg/25m/stats")
-  dir.create("./Veg/25m/ratios")
+create_main_structure <- function(){
+  dir.create("./veg")
+  dir.create("./mosaics")
 }
-create_veg_structure()
-output_dirs <- list.dirs("./Veg", recursive = F)
+create_main_structure()
+output_dirs <- list.dirs(recursive = F)
 
-calc_metrics <- function(x, CRS, output_dir, resolution, nrml = F){
+calc_metrics <- function(x, CRS, output_dir, resolution, nrml){
 
   format_tile_name <- function(x){
      tn <- basename(tools::file_path_sans_ext(x))
@@ -119,8 +102,33 @@ clusterEvalQ(cl, {
 clusterExport(cl, c("veg_floor", "veg_ceiling", "ras_fmt"))
 
 for (res in output_res){
+  res_output <- file.path("./veg", paste(res, "m", sep = ""))
+  create_res_output <- function(folder){
+    dir.create(res_output)
+    dir.create(file.path(res_output, "canopy"))
+    dir.create(file.path(res_output, "height_pct"))
+    dir.create(file.path(res_output, "height_cnt"))
+    dir.create(file.path(res_output, "height_den"))
+    dir.create(file.path(res_output, "stats"))
+    dir.create(file.path(res_output, "ratios"))
+  }
+  create_res_output(res_output)
+
   system.time(clusterApplyLB(cl, lidar_files, calc_metrics,
-    CRS = input_crs, output_dir = output_dirs[1],
+    CRS = input_crs, output_dir = res_output,
     resolution = res, nrml = hag_nrml))
+
+  products <- list.dirs(res_output)
+  products <- products[-1]
+
+  create_mosaic <- function(p){
+    f_list <- tools::list_files_with_exts(p, "img")
+    r <- raster::stack(f_list[1])
+    for (f in f_list){
+      t <- raster::stack(f)
+      r <- raster::merge(r, t, tolerance = 5)
+    }
+  }
+  system.time(clusterApplyLB(cl, products, create_mosaic))
 }
 stopCluster(cl)
