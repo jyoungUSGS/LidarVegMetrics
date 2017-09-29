@@ -101,27 +101,26 @@ create_mosaics <- function(p, output_dir){
     lc <- lapply(f_list, FUN = function(x){
       raster::nlayers(raster::stack(x))
     })
-    lc <- max(unlist(lc))
+    max_lc <- max(unlist(lc))
     for (f in f_list){
-        if (raster::nlayers(raster::stack(f)) < lc){
-          print(f)
-          s <- raster::stack(f)
-          while (raster::nlayers(s) < lc){
-            r <- raster::raster(s)
-            r <- raster::setValues(r, 0)
-            s <- raster::addLayer(s, r)
-          }
-          raster::writeRaster(s, f, overwrite = T)
+      if (raster::nlayers(raster::stack(f)) < max_lc){
+        print(f)
+        file.copy(f, "tmp.img")
+        file.remove(f)
+        s <- raster::stack("tmp.img")
+        while (raster::nlayers(s) < max_lc){
+          r <- raster::raster(s)
+          r <- raster::setValues(r, NA)
+          s <- raster::addLayer(s, r)
         }
+        raster::writeRaster(s, f, overwrite = T)
+        file.remove("tmp.img")
+      }
     }
   }
   f_list <- tools::list_files_with_exts(p, "img")
-  s <- raster::stack(f_list[1])
-  for (f in f_list){
-    t <- raster::stack(f)
-    s <- raster::merge(s, t, tolerance = 5)
-  }
-  np <- strsplit(basename(f), "_")
+  s <- do.call(merge, lapply(f_list, function(x){raster(x)}))
+  np <- strsplit(basename(f_list[1]), "_")
   m_name <- paste0(unlist(np[[1]][c(1:3, 6:7)]), collapse = "_")
   output_path <- file.path(output_dir, m_name)
   raster::writeRaster(s, output_path, overwrite = T)
@@ -152,9 +151,9 @@ for (res in output_res){
   res_output <- file.path(folders["tiles"], paste(res, "m", sep = ""))
   products <- create_res_output(res_output)
 
-  system.time(tiles <- parLapply(cl, lidar_files, calc_metrics,
-    CRS = input_crs, output_dir = res_output, resolution = res))
-  # system.time(parLapply(cl, products, create_mosaics,
-  #   output_dir = folders["mosaics"]))
+  # system.time(tiles <- parLapply(cl, lidar_files, calc_metrics,
+  #   CRS = input_crs, output_dir = res_output, resolution = res))
+  system.time(parLapply(cl, products, create_mosaics,
+    output_dir = folders["mosaics"]))
 }
 stopCluster(cl)
