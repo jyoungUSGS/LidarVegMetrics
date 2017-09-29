@@ -23,13 +23,13 @@ calcPointStatistics <- function(x, resolution = 30, pointClasses = c(100:200)){
       sqrt(mean(x ^ 2))
   }
 
-  minRast <- raster::rasterize(x@coords, r, field = x$Z_agl, fun = min)
-  maxRast <- raster::rasterize(x@coords, r, field = x$Z_agl, fun = max)
-  meanRast <- raster::rasterize(x@coords, r, field = x$Z_agl, fun = mean)
-  sdRast <- raster::rasterize(x@coords, r, field = x$Z_agl, fun = sd)
-  skewRast <- raster::rasterize(x@coords, r, field = x$Z_agl, fun = moments::skewness)
-  kurtRast <- raster::rasterize(x@coords, r, field = x$Z_agl, fun = moments::kurtosis)
-  qMeanRast <- raster::rasterize(x@coords, r, field = x$Z_agl, fun = qMean)
+  minRast <- raster::rasterize(x, r, field = x$Z_agl, fun = min)
+  maxRast <- raster::rasterize(x, r, field = x$Z_agl, fun = max)
+  meanRast <- raster::rasterize(x, r, field = x$Z_agl, fun = mean)
+  sdRast <- raster::rasterize(x, r, field = x$Z_agl, fun = sd)
+  skewRast <- raster::rasterize(x, r, field = x$Z_agl, fun = moments::skewness)
+  kurtRast <- raster::rasterize(x, r, field = x$Z_agl, fun = moments::kurtosis)
+  qMeanRast <- raster::rasterize(x, r, field = x$Z_agl, fun = qMean)
 
   s <- raster::stack(minRast, maxRast, meanRast, sdRast, skewRast, kurtRast, qMeanRast)
   names(s) <- c("hmin", "hmax", "havg", "hstd", "hske", "hkur", "hqav")

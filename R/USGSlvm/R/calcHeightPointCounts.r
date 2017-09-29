@@ -32,8 +32,8 @@ calcHeightPointCounts <- function(x, resolution = 30, binHeight = 5,
   for (i in 1:binCount){
     bottom <- bottom
     top <- bottom + binHeight
-    t <- x[bottom <= x$Z & x$Z < top, "Z_agl"]
-    if (nrow(t) == 0 ){
+    t <- x[bottom <= x$Z_agl & x$Z_agl < top, "Z_agl"]
+    if (nrow(t) == 0){
       countRast <- raster::setValues(r, 0)
     } else {
       countRast <- raster::rasterize(t, r, field = t$Z_agl, fun = "count")

@@ -15,9 +15,9 @@
 
 canopyHeightModel <- function(x, resolution = 30){
   tile_raster <- raster(x, resolution = output_res)
-  dem <- rasterize(x@coords[x$Classification==2, 1:2 ], tile_raster, x$Z[x$Classification==2], fun=mean)
+  dem <- rasterize(x[x$Classification==2, 1:2 ], tile_raster, x$Z[x$Classification==2], fun=mean)
   dem <- focal(dem, w=matrix(1, 7, 7), fun=mean, na.rm=TRUE, NAonly=TRUE)
-  frs <- rasterize(x@coords[x$ReturnNumber==1, 1:2 ], tile_raster, x$Z[x$ReturnNumber==1], fun=max)
+  frs <- rasterize(x[x$ReturnNumber==1, 1:2 ], tile_raster, x$Z[x$ReturnNumber==1], fun=max)
   frs <- focal(frs, w=matrix(1, 7, 7), fun=mean, na.rm=TRUE, NAonly=TRUE)
   chm <- frs - dem
   return(chm)

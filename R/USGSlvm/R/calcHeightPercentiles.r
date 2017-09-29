@@ -23,7 +23,7 @@ calcHeightPercentiles <- function(x, resolution = 30,
   perc_stack <- raster::raster(x, resolution = resolution)
   x <- x[x$Classification %in% pointClasses, ]
   for (i in percentiles){
-    perc_rast <- raster::rasterize(x@coords[, 1:2], tile_raster,
+    perc_rast <- raster::rasterize(x, tile_raster,
       field = x$Z_agl, fun = function(x, ...){quantile(x, i, na.rm = T)})
     perc_stack <- raster::addLayer(perc_stack, perc_rast)
   }
