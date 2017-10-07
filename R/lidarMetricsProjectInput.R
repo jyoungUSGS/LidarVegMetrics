@@ -7,7 +7,7 @@ library(parallel)
 dbh <<- 1.37
 
 # USER PARAMETERS
-project_dir <- "C:/Users/nfkruska/Documents/data/Project1"
+project_dir <- "C:/Users/nfkruska/Documents/data/SHEN_2012"
 lidar_dir <- "./LAZ"
 input_crs <- "+proj=utm +zone=17 +ellps=GRS80 +datum=NAD83 +units=m +no_defs"
 # points under this value will not be considered as vegetation
@@ -15,13 +15,14 @@ veg_floor <- dbh
 # points above this value will not be considered as vegetation
 veg_ceiling <- 50
 # output raster resolution(s). Can be integer or list of integers
-output_res <- 10
+output_res <- 25
 # boolean: have the input points been normalized?
 # NOT CURRENTLY SUPPORTED
 # points must be normalized before processing
 hag_nrml <- T
 # raster format for output: "HFA" = .img
 ras_fmt <- "HFA"
+
 # =============================================================================
 setwd(project_dir)
 lidar_files <- tools::list_files_with_exts(lidar_dir,
@@ -29,12 +30,9 @@ lidar_files <- tools::list_files_with_exts(lidar_dir,
 
 folders <- c("./tiles", "./mosaics")
 names(folders) <- c("tiles", "mosaics")
-
-create_main_structure <- function(){
-  dir.create(folders["tiles"])
-  dir.create(folders["mosaics"])
-}
-create_main_structure()
+dir.create(folders["tiles"])
+dir.create(folders["mosaics"])
+# =============================================================================
 
 calc_metrics <- function(x, CRS, output_dir, resolution, nrml = T){
 
@@ -46,6 +44,7 @@ calc_metrics <- function(x, CRS, output_dir, resolution, nrml = T){
      return(tn)
    }
   tile_name <- format_tile_name(x)
+  print(tile_name)
 
   save_output <- function(output_dir, folder, tile_name, product, file){
     output_path <- file.path(output_dir, folder, paste(tile_name, product,
@@ -105,21 +104,24 @@ create_mosaics <- function(p, output_dir){
     for (f in f_list){
       if (raster::nlayers(raster::stack(f)) < max_lc){
         print(f)
-        file.copy(f, "tmp.img")
+        tmp <- paste(f, "tmp.img", sep = "_")
+        file.copy(f, tmp)
         file.remove(f)
-        s <- raster::stack("tmp.img")
+        s <- raster::stack(tmp)
         while (raster::nlayers(s) < max_lc){
           r <- raster::raster(s)
           r <- raster::setValues(r, NA)
           s <- raster::addLayer(s, r)
         }
         raster::writeRaster(s, f, overwrite = T)
-        file.remove("tmp.img")
+        file.remove(tmp)
       }
     }
   }
   f_list <- tools::list_files_with_exts(p, "img")
-  s <- do.call(merge, lapply(f_list, function(x){raster(x)}))
+  s <- do.call(merge, c(lapply(f_list, function(x){
+    raster::stack(x)
+  }), tolerance = 10))
   np <- strsplit(basename(f_list[1]), "_")
   m_name <- paste0(unlist(np[[1]][c(1:3, 6:7)]), collapse = "_")
   output_path <- file.path(output_dir, m_name)
@@ -151,9 +153,9 @@ for (res in output_res){
   res_output <- file.path(folders["tiles"], paste(res, "m", sep = ""))
   products <- create_res_output(res_output)
 
-  # system.time(tiles <- parLapply(cl, lidar_files, calc_metrics,
-  #   CRS = input_crs, output_dir = res_output, resolution = res))
-  system.time(parLapply(cl, products, create_mosaics,
+  tile_time <- system.time(tiles <- clusterApplyLB(cl, lidar_files,
+    calc_metrics, CRS = input_crs, output_dir = res_output, resolution = res))
+  mosaic_time <- system.time(clusterApplyLB(cl, products, create_mosaics,
     output_dir = folders["mosaics"]))
 }
 stopCluster(cl)

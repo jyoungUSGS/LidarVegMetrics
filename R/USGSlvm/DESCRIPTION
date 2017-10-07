@@ -1,6 +1,6 @@
 Package: USGSlvm
 Title: USGS Lidar Vegetation Metrics
-Version: 0.0.0.9000
+Version: 0.9.5
 Authors@R: person("Nicholas", "Kruskamp", email = "nfkruska@ncsu.edu", role = c("aut", "cre"))
 Description: This package generates standard vegetation metrics from lidar point
     clouds collected by and for the USGS.

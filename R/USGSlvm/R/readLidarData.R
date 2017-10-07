@@ -15,13 +15,9 @@
 #'@importFrom rlas readlasdata
 #'@importFrom sp coordinates proj4string CRS
 
-readLidarData <- function(inputFile, inputCRS, maxHAG = 300, returnAll = FALSE){
+readLidarData <- function(x, inputCRS, maxHAG = 300, returnAll = FALSE){
 
-  x <- rlas::readlasdata(inputFile, Intensity = F, ReturnNumber = T,
-                         NumberOfReturns = T, ScanDirectionFlag = F,
-                         EdgeOfFlightline = F, Classification = T,
-                         ScanAngle = T, UserData = F, PointSourceID = F,
-                         RGB = F, filter = "")
+  x <- rlas::readlasdata(x, F, T, T, F, F, T, T, F, F, F)
 
   if (returnAll==F) {
     x <- x[x$Classification %in% c(1, 2, 3, 4, 5, 8, 19), ]
