@@ -147,7 +147,7 @@ create_mosaics <- function(p, output_dir){
     }
   }
   f_list <- tools::list_files_with_exts(p, c("img", "tif", "grd", "nc",
-    "envi", "bil"))
+    "envi", "bil", "tiff"))
   if (length(f_list) == 0){
     warning(paste0("No raster tiles found in ", p, ". Product failed."))
     return(FALSE)
