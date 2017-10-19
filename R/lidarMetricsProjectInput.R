@@ -10,7 +10,13 @@ dbh <<- 1.37
 project_dir <- "C:/Users/nfkruska/Documents/data/SHEN_2012"
 # lidar_dir <- "D:/CDI2017/Lidar_collects/SHEN/ShenValley2011/HAG/UNBuffered"
 lidar_dir <- "D:/CDI2017/Lidar_collects/SHEN/NRCS_RockinghamCnty_2012/HAG/UNBuffered"
-input_crs <- "+proj=utm +zone=17 +ellps=GRS80 +datum=NAD83 +units=m +no_defs"
+
+
+# Quick Reference EPSG Codes:
+# NAD83 / UTM zone 17N: 26917
+# NAD83(2011) / Conus Albers: 6350
+epsg_code <- 6350
+
 # points under this value will not be considered as vegetation
 veg_floor <- dbh
 # points above this value will not be considered as vegetation
@@ -21,10 +27,14 @@ output_res <- c(10, 25)
 # NOT CURRENTLY SUPPORTED
 # points must be normalized before processing
 hag_nrml <- T
-# raster format for output: "HFA" = .img
-ras_fmt <- "HFA"
+# raster format for output: "HFA" = .img, "GTiff" = .tif
+ras_fmt <- "GTiff"
 
 # =============================================================================
+epsg <- make_EPSG()
+epsg <- epsg[! is.na(epsg$code), ]
+input_crs <- epsg$prj4[epsg$code == epsg_code]
+
 setwd(project_dir)
 lidar_files <- tools::list_files_with_exts(lidar_dir,
                                           c("LAS", "las", "LAZ", "laz"))
