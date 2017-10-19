@@ -2,20 +2,23 @@ library(raster)
 library(USGSlvm)
 library(tools)
 library(parallel)
+library(rgdal)
 
-# Global variables
+# Global dbh in meters
+# must be changed if input unit is not meters
 dbh <<- 1.37
 
-# USER PARAMETERS
+# Absolute path to working directory for output files
 project_dir <- "C:/Users/nfkruska/Documents/data/SHEN_2012"
+
+# Relative or absolute path to location of lidar files
 # lidar_dir <- "D:/CDI2017/Lidar_collects/SHEN/ShenValley2011/HAG/UNBuffered"
 lidar_dir <- "D:/CDI2017/Lidar_collects/SHEN/NRCS_RockinghamCnty_2012/HAG/UNBuffered"
 
-
-# Quick Reference EPSG Codes:
+# Input CRS of lidar files found by EPSG code
 # NAD83 / UTM zone 17N: 26917
 # NAD83(2011) / Conus Albers: 6350
-epsg_code <- 6350
+epsg_code <- 134145
 
 # points under this value will not be considered as vegetation
 veg_floor <- dbh
@@ -25,19 +28,28 @@ veg_ceiling <- 50
 output_res <- c(10, 25)
 # boolean: have the input points been normalized?
 # NOT CURRENTLY SUPPORTED
-# points must be normalized before processing
+# POINTS MUST ALREADY BE NORMALIZED
 hag_nrml <- T
-# raster format for output: "HFA" = .img, "GTiff" = .tif
+# raster format for output
+# "HFA": .img
+# "GTiff": .tif
 ras_fmt <- "GTiff"
 
 # =============================================================================
+setwd(project_dir)
+
+lidar_files <- tools::list_files_with_exts(lidar_dir,
+                                          c("LAS", "las", "LAZ", "laz"))
+if (length(lidar_files) == 0){
+  stop("No lidar files found in lidar directory.")
+}
+
 epsg <- make_EPSG()
 epsg <- epsg[! is.na(epsg$code), ]
 input_crs <- epsg$prj4[epsg$code == epsg_code]
-
-setwd(project_dir)
-lidar_files <- tools::list_files_with_exts(lidar_dir,
-                                          c("LAS", "las", "LAZ", "laz"))
+if (length(input_crs) == 0){
+  stop("EPSG code was not found.")
+}
 
 folders <- c("./tiles", "./mosaics")
 names(folders) <- c("tiles", "mosaics")
@@ -60,6 +72,10 @@ calc_metrics <- function(x, CRS, output_dir, resolution, nrml = T){
   save_output <- function(output_dir, folder, tile_name, product, file){
     output_path <- file.path(output_dir, folder, paste(tile_name, product,
       sep = "_"))
+      if (file.exists(output_path)){
+        warning(paste0("File ", output_path,
+          " already exists. It will be overwritten."))
+      }
     raster::writeRaster(file, output_path, ras_fmt, overwrite = T)
   }
 
@@ -132,13 +148,22 @@ create_mosaics <- function(p, output_dir){
   }
   f_list <- tools::list_files_with_exts(p, c("img", "tif", "grd", "nc",
     "envi", "bil"))
+  if (length(f_list) == 0){
+    warning(paste0("No raster tiles found in ", p, ". Product failed."))
+    return(FALSE)
+  }
   s <- do.call(merge, c(lapply(f_list, function(x){
     raster::stack(x)
   }), tolerance = 10))
   np <- strsplit(basename(f_list[1]), "_")
   m_name <- paste0(unlist(np[[1]][c(1:3, 6:7)]), collapse = "_")
   output_path <- file.path(output_dir, m_name)
+  if (file.exists(output_path)){
+    warning(paste0("File ", output_path,
+      " already exists. It will be overwritten."))
+  }
   raster::writeRaster(s, output_path, overwrite = T)
+  return(TRUE)
 }
 
 create_res_output <- function(f){
