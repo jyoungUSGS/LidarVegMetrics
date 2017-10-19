@@ -8,14 +8,15 @@ dbh <<- 1.37
 
 # USER PARAMETERS
 project_dir <- "C:/Users/nfkruska/Documents/data/SHEN_2012"
-lidar_dir <- "./LAZ"
+# lidar_dir <- "D:/CDI2017/Lidar_collects/SHEN/ShenValley2011/HAG/UNBuffered"
+lidar_dir <- "D:/CDI2017/Lidar_collects/SHEN/NRCS_RockinghamCnty_2012/HAG/UNBuffered"
 input_crs <- "+proj=utm +zone=17 +ellps=GRS80 +datum=NAD83 +units=m +no_defs"
 # points under this value will not be considered as vegetation
 veg_floor <- dbh
 # points above this value will not be considered as vegetation
 veg_ceiling <- 50
 # output raster resolution(s). Can be integer or list of integers
-output_res <- 25
+output_res <- c(10, 25)
 # boolean: have the input points been normalized?
 # NOT CURRENTLY SUPPORTED
 # points must be normalized before processing
@@ -96,7 +97,8 @@ calc_metrics <- function(x, CRS, output_dir, resolution, nrml = T){
 
 create_mosaics <- function(p, output_dir){
   if (grepl("height_den", p) | grepl("height_cnt", p)){
-    f_list <- tools::list_files_with_exts(p, "img")
+    f_list <- tools::list_files_with_exts(p, c("img", "tif", "grd", "nc",
+      "envi", "bil"))
     lc <- lapply(f_list, FUN = function(x){
       raster::nlayers(raster::stack(x))
     })
@@ -118,7 +120,8 @@ create_mosaics <- function(p, output_dir){
       }
     }
   }
-  f_list <- tools::list_files_with_exts(p, "img")
+  f_list <- tools::list_files_with_exts(p, c("img", "tif", "grd", "nc",
+    "envi", "bil"))
   s <- do.call(merge, c(lapply(f_list, function(x){
     raster::stack(x)
   }), tolerance = 10))
