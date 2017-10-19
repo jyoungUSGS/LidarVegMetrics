@@ -1,11 +1,8 @@
 library(devtools)
 library(roxygen2)
-document("C:/Users/nfkruska/Documents/GitHub/LidarVegMetrics/R/USGSlvm")
-install("C:/Users/nfkruska/Documents/GitHub/LidarVegMetrics/R/USGSlvm")
 
-# EPSG 6350 CONUS ALBERS METERS
+# From local directory
+devtools::install("./GitHub/LidarVegMetrics/R/USGSlvm")
 
-delete_results <-function(){
-  file.remove(list.files(pattern = ".tif", recursive = T))
-}
-
+# From GitHub
+devtools::install_github("jyoungUSGS/LidarVegMetrics/tree/master/R/USGSlvm")

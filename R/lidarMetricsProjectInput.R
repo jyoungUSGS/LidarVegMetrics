@@ -18,7 +18,7 @@ lidar_dir <- "D:/CDI2017/Lidar_collects/SHEN/NRCS_RockinghamCnty_2012/HAG/UNBuff
 # Input CRS of lidar files found by EPSG code
 # NAD83 / UTM zone 17N: 26917
 # NAD83(2011) / Conus Albers: 6350
-epsg_code <- 134145
+epsg_code <- 26917
 
 # points under this value will not be considered as vegetation
 veg_floor <- dbh
