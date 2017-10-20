@@ -23,6 +23,6 @@ calcCanopyCover <- function(x, resolution = 30, pointClasses = c(100:200)) {
   x <- x[x$Classification %in% pointClasses, ]
   vegRast <- raster::rasterize(x, r, x$Z_agl, fun = "count")
   canCovRast <- vegRast / allRast * 100
-
+  names(canCovRast) <- "ccov"
   return(canCovRast)
 }

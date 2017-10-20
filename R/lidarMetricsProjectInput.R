@@ -9,11 +9,10 @@ library(rgdal)
 dbh <<- 1.37
 
 # Absolute path to working directory for output files
-project_dir <- "C:/Users/nfkruska/Documents/data/SHEN_2012"
+project_dir <- "C:/Users/nfkruska/Documents/data/SHEN/SHEN_2011"
 
 # Relative or absolute path to location of lidar files
-# lidar_dir <- "D:/CDI2017/Lidar_collects/SHEN/ShenValley2011/HAG/UNBuffered"
-lidar_dir <- "D:/CDI2017/Lidar_collects/SHEN/NRCS_RockinghamCnty_2012/HAG/UNBuffered"
+lidar_dir <- "./HAG"
 
 # Input CRS of lidar files found by EPSG code
 # NAD83 / UTM zone 17N: 26917
@@ -72,11 +71,18 @@ calc_metrics <- function(x, CRS, output_dir, resolution, nrml = T){
   save_output <- function(output_dir, folder, tile_name, product, file){
     output_path <- file.path(output_dir, folder, paste(tile_name, product,
       sep = "_"))
-      if (file.exists(output_path)){
-        warning(paste0("File ", output_path,
-          " already exists. It will be overwritten."))
-      }
-    raster::writeRaster(file, output_path, ras_fmt, overwrite = T)
+    if (file.exists(output_path)){
+      warning(paste0("File ", output_path,
+        " already exists. It will be overwritten."))
+    }
+
+    if (product %in% c("hden", "hcnt", "hpct")){
+      raster::writeRaster(file, output_path, ras_fmt, overwrite = T,
+        options = "COMPRESS = DEFLATE")
+    } else {
+      raster::writeRaster(file, output_path, ras_fmt, overwrite = T,
+        bylayer = T, suffix = names(file), options = "COMPRESS = DEFLATE")
+    }
   }
 
    # data load with CRS
@@ -103,7 +109,7 @@ calc_metrics <- function(x, CRS, output_dir, resolution, nrml = T){
      ccov <- USGSlvm::calcCanopyCover(x, res)
      cdens <- USGSlvm::calcCanopyDensity(x, res)
      s <- raster::stack(ccov, cdens)
-     names(s) <- c("ccov", "cdens")
+     names(s) <- c("ccov", "cden")
      return(s)
    }
    cnpy <- create_canopy_stack(las_data, resolution)
@@ -162,7 +168,7 @@ create_mosaics <- function(p, output_dir){
     warning(paste0("File ", output_path,
       " already exists. It will be overwritten."))
   }
-  raster::writeRaster(s, output_path, overwrite = T)
+  raster::writeRaster(s, output_path, format = ras_fmt, overwrite = T)
   return(TRUE)
 }
 
@@ -193,7 +199,7 @@ for (res in output_res){
 
   tile_time <- system.time(tiles <- clusterApplyLB(cl, lidar_files,
     calc_metrics, CRS = input_crs, output_dir = res_output, resolution = res))
-  mosaic_time <- system.time(clusterApplyLB(cl, products, create_mosaics,
-    output_dir = folders["mosaics"]))
+  # mosaic_time <- system.time(clusterApplyLB(cl, products, create_mosaics,
+  #   output_dir = folders["mosaics"]))
 }
 stopCluster(cl)
