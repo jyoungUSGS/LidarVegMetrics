@@ -2,7 +2,10 @@ library(devtools)
 library(roxygen2)
 
 # From local directory
-devtools::install("./GitHub/LidarVegMetrics/R/USGSlvm")
+devtools::document("C:/Users/nfkruska/Documents/GitHub/LidarVegMetrics/R/USGSlvm")
+devtools::install("C:/Users/nfkruska/Documents/GitHub/LidarVegMetrics/R/USGSlvm")
 
 # From GitHub
 devtools::install_github("jyoungUSGS/LidarVegMetrics/tree/master/R/USGSlvm")
+
+
