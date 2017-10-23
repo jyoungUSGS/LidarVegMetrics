@@ -35,7 +35,7 @@ shen_points_2_plots <- function(x, dim){
   plot_polys <- SpatialPolygonsDataFrame(multi_polys, x@data)
   return(plot_polys)
 }
-veg_plot_poly <- shen_points_2_plots(veg_plot_pnts, 24)
+
 
 # load field information
 tree <- fread("./field_data/tree_data.csv")
@@ -47,41 +47,79 @@ tree_v4 <- tree[Visit_Number == 4]
 shrb_v4 <- shrb[Visit_Number == 4]
 seed_v4 <- seed[Visit_Number == 4]
 
+# field plots
+veg_plot_poly <- shen_points_2_plots(veg_plot_pnts, 24)
+
 # calc field stats
 field_stats <- tree_v4[, .(mean(DBHcm, na.rm = T)), by = .(SiteID)]
-names(field_stats)[2] <- "tree_mean_dbh"
+setnames(field_stats, "V1", "tree_mean_dbh_cm")
+
 field_stats <- merge(field_stats, tree_v4[, .(sum(TreeBA_m2, na.rm = T)),
   by = .(SiteID)], by = "SiteID", all.x=TRUE)
-names(field_stats)[3] <- "tree_sum_ba"
+setnames(field_stats, "V1", "tree_sum_ba_m2")
+field_stats$ba_per_ha <- field_stats$tree_sum_ba * (10000 / (24*24))
+
 field_stats <- merge(field_stats, tree_v4[, .(max(Tree_ht_m_calc, na.rm = T)),
   by = .(SiteID)], by = "SiteID", all.x=TRUE)
-names(field_stats)[4] <- "tree_max_ht"
+setnames(field_stats, "V1", "tree_max_ht_m")
+field_stats$tree_max_ht_m[field_stats$tree_max_ht_m == -Inf] <- NA
+
 field_stats <- merge(field_stats, tree_v4[, .(mean(Tree_ht_m_calc, na.rm = T)),
   by = .(SiteID)], by = "SiteID", all.x=TRUE)
-names(field_stats)[5] <- "tree_mean_ht"
+setnames(field_stats, "V1", "tree_mean_ht_m")
+
 field_stats <- merge(field_stats, tree_v4[, .(min(Tree_ht_m_calc, na.rm = T)),
   by = .(SiteID)], by = "SiteID", all.x=TRUE)
-names(field_stats)[6] <- "tree_min_ht"
-field_stats$tree_max_ht[field_stats$tree_max_ht == -Inf] <- NA
+setnames(field_stats, "V1", "tree_min_ht_m")
+field_stats$tree_min_ht_m[field_stats$tree_min_ht_m == Inf] <- NA
+
 field_stats <- merge(field_stats, shrb_v4[, .(mean(Calc_DBH, na.rm = T)),
   by = .(SiteID)], by = "SiteID", all.x=TRUE)
-names(field_stats)[7] <- "shrb_mean_dbh"
+setnames(field_stats, "V1", "shrb_mean_dbh_cm")
+
 field_stats <- merge(field_stats, shrb_v4[, .(sum(Stem_count, na.rm = T)),
   by = .(SiteID)], by = "SiteID", all.x=TRUE)
-names(field_stats)[8] <- "shrb_stm_cnt"
+setnames(field_stats, "V1", "shrb_stm_cnt")
+
 field_stats <- merge(field_stats, seed_v4[, .(sum(Stem_count, na.rm = T)),
   by = .(SiteID)], by = "SiteID", all.x=TRUE)
-names(field_stats)[9] <- "seed_stm_cnt"
+setnames(field_stats, "V1", "seed_stm_cnt")
+
 field_stats <- merge(field_stats, tree_v4[, .N,
   by = .(SiteID)], by = "SiteID", all.x=TRUE)
-  names(field_stats)[10] <- "tree_stm_cnt"
+setnames(field_stats, "N", "tree_stm_cnt")
 
 # merge field stats with plot polys
-veg_plot_poly@data <- merge(veg_plot_poly@data, field_stats, by = "SiteID")
+veg_plot_poly <- merge(veg_plot_poly, field_stats, by = "SiteID", all.x=TRUE)
+
+
+shen_albers_tiles <- readOGR("./geo_layers", layer = "shen_albers_tiles")
+tile_index_name <- paste(paste0("e", substr(shen_albers_tiles@data$TileID, 2, 5)),
+  paste0("n", substr(shen_albers_tiles@data$TileID, 7, 10)), sep = "_")
+
+shen_albers_tiles$tile_name <- paste(paste0("e",
+  substr(shen_albers_tiles@data$TileID, 2, 5)), paste0("n",
+  substr(shen_albers_tiles@data$TileID, 7, 10)), sep = "_")
+
+shen_albers_tiles <- spTransform(shen_albers_tiles, veg_plot_poly@proj4string)
+veg_plot_poly$tile_index <- over(veg_plot_poly, shen_albers_tiles)$tile_name
+
+laz_hag_list <- list.files("D:/CDI2017/Lidar_collects/SHEN",
+  pattern = "_HAG.laz", recursive = T)
+
+
+# this should be a function written in parallel. Can that be done to write data
+# back to object? Or return a list of values and merge later?
+for (i in 1:nrow(veg_plot_poly)){
+  list_index <- grep(veg_plot_poly@data$tile_index[i], laz_hag_list)[1]
+  print(list_index)
+
+  las_data <- USGSlvm::readLidarData(las_hag_list[list_index], )
+}
+
 
 # PSEUDO CODE FOR EXTRACTING LIDAR METRICS BY SITE
 #
-# Load albers tile index
 # extract tile index ID to veg poly
 # Recursively search through all shenandoah data folders to find a matching
 # LAZ file by tile index ID, extract full path of LAZ to veg poly
