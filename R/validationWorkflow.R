@@ -8,6 +8,9 @@ library(gstat)
 
 setwd("C:/Users/nfkruska/Documents/data/SHEN")
 
+
+resolution <- 8
+
 # load plot points
 veg_plot_pnts <- readOGR("./geo_layers", layer = "SHEN_FVM_2003-2015_plots")
 
@@ -35,7 +38,6 @@ shen_points_2_plots <- function(x, dim){
   plot_polys <- SpatialPolygonsDataFrame(multi_polys, x@data)
   return(plot_polys)
 }
-
 
 # load field information
 tree <- fread("./field_data/tree_data.csv")
@@ -92,29 +94,70 @@ setnames(field_stats, "N", "tree_stm_cnt")
 # merge field stats with plot polys
 veg_plot_poly <- merge(veg_plot_poly, field_stats, by = "SiteID", all.x=TRUE)
 
+get_tile_dir <- function(x, crs){
+  cat <- lidR::catalog(x)
+  xy <- cat[28:31]
+  tb <- data.frame(xy[, 2], xy[, 3], xy[, 1], xy[, 3], xy[, 1], xy[, 4],
+    xy[, 2], xy[, 4], xy[, 2], xy[, 3])
+  names(tb) <- c("c1x", "c1y", "c2x", "c2y", "c3x", "c3y", "c4x", "c4y", "c1x",
+    "c1y")
+  poly_list <- apply(tb, 1, FUN = function(x){Polygon(matrix(unlist(x),
+    nrow = 5, ncol = 2, byrow = T))})
+  polys_list <- list()
+  for (i in 1:length(poly_list)){
+    polys_list[[i]] <- Polygons(poly_list[i], i)
+  }
+  multi_polys <- SpatialPolygons(polys_list, proj4string = crs)
+  sp_df <- SpatialPolygonsDataFrame(multi_polys, as.data.frame(cat[34]))
+  return(sp_df)
+}
 
-shen_albers_tiles <- readOGR("./geo_layers", layer = "shen_albers_tiles")
-tile_index_name <- paste(paste0("e", substr(shen_albers_tiles@data$TileID, 2, 5)),
-  paste0("n", substr(shen_albers_tiles@data$TileID, 7, 10)), sep = "_")
+td_2011 <- get_tile_dir("D:/CDI2017/Lidar_collects/SHEN/ShenValley2011/HAG/UNBuffered", veg_plot_poly@proj4string)
 
-shen_albers_tiles$tile_name <- paste(paste0("e",
-  substr(shen_albers_tiles@data$TileID, 2, 5)), paste0("n",
-  substr(shen_albers_tiles@data$TileID, 7, 10)), sep = "_")
+td_2012 <- get_tile_dir("D:/CDI2017/Lidar_collects/SHEN/NRCS_RockinghamCnty_2012/HAG/UNBuffered", veg_plot_poly@proj4string)
 
-shen_albers_tiles <- spTransform(shen_albers_tiles, veg_plot_poly@proj4string)
-veg_plot_poly$tile_index <- over(veg_plot_poly, shen_albers_tiles)$tile_name
+td_2013_cda <- get_tile_dir("D:/CDI2017/Lidar_collects/SHEN/NRCS2013/CDa/HAG/UNBuffered", veg_plot_poly@proj4string)
+td_2013_cdb <- get_tile_dir("D:/CDI2017/Lidar_collects/SHEN/NRCS2013/CDb/HAG/UNBuffered", veg_plot_poly@proj4string)
+td_2013_nda <- get_tile_dir("D:/CDI2017/Lidar_collects/SHEN/NRCS2013/NDa/HAG/UNBuffered", veg_plot_poly@proj4string)
+td_2013_ndab <- get_tile_dir("D:/CDI2017/Lidar_collects/SHEN/NRCS2013/NDb/HAG/UNBuffered", veg_plot_poly@proj4string)
 
-laz_hag_list <- list.files("D:/CDI2017/Lidar_collects/SHEN",
-  pattern = "_HAG.laz", recursive = T)
+td_2015n_cdb <- get_tile_dir("D:/CDI2017/Lidar_collects/SHEN/Chesapeake_2015/CLASSIFIED_LAZ_VA_SP_NORTH_SNP/CDb/Tiled/HAG/UNBuffered", veg_plot_poly@proj4string)
+td_2015n_sda <- get_tile_dir("D:/CDI2017/Lidar_collects/SHEN/Chesapeake_2015/CLASSIFIED_LAZ_VA_SP_NORTH_SNP/SDa/HAG/UNBuffered", veg_plot_poly@proj4string)
+td_2015n_sdb <- get_tile_dir("D:/CDI2017/Lidar_collects/SHEN/Chesapeake_2015/CLASSIFIED_LAZ_VA_SP_NORTH_SNP/SDb/HAG/UNBuffered", veg_plot_poly@proj4string)
+td_2015s_sda <- get_tile_dir("D:/CDI2017/Lidar_collects/SHEN/Chesapeake_2015/CLASSIFIED_LAZ_VA_SP_SOUTH_SNP/SDa/HAG/UNBuffered", veg_plot_poly@proj4string)
+td_2015s_sdb <- get_tile_dir("D:/CDI2017/Lidar_collects/SHEN/Chesapeake_2015/CLASSIFIED_LAZ_VA_SP_SOUTH_SNP/SDb/HAG/UNBuffered", veg_plot_poly@proj4string)
+
+# shen_albers_tiles <- readOGR("./geo_layers", layer = "shen_albers_tiles")
+# tile_index_name <- paste(paste0("e", substr(shen_albers_tiles@data$TileID, 2, 5)),
+#   paste0("n", substr(shen_albers_tiles@data$TileID, 7, 10)), sep = "_")
+#
+# shen_albers_tiles$tile_name <- paste(paste0("e",
+#   substr(shen_albers_tiles@data$TileID, 2, 5)), paste0("n",
+#   substr(shen_albers_tiles@data$TileID, 7, 10)), sep = "_")
+#
+# shen_albers_tiles <- spTransform(shen_albers_tiles, veg_plot_poly@proj4string)
+# veg_plot_poly$tile_index <- over(veg_plot_poly, shen_albers_tiles)$tile_name
+#
+# laz_hag_list <- list.files("D:/CDI2017/Lidar_collects/SHEN",
+#   pattern = "_HAG.laz", recursive = T)
 
 
 # this should be a function written in parallel. Can that be done to write data
 # back to object? Or return a list of values and merge later?
 for (i in 1:nrow(veg_plot_poly)){
-  list_index <- grep(veg_plot_poly@data$tile_index[i], laz_hag_list)[1]
-  print(list_index)
+  ld <- readLidarData(veg_plot_poly$filename[i], veg_plot_poly@proj4string)
+  pld_ext <- extent(veg_plot_poly[i, ])
+  ld <- crop(ld, pld_ext)
 
-  las_data <- USGSlvm::readLidarData(las_hag_list[list_index], )
+  names(ld)[1] <- "Z_agl"
+
+  stats <- USGSlvm::calcPointStatistics(ld, resolution)
+  vdr <- USGSlvm::calcVertDistRatio(ld, resolution)
+  ccov <- USGSlvm::calcCanopyCover(ld, resolution)
+  cdens <- USGSlvm::calcCanopyDensity(ld, resolution)
+  hpct <- USGSlvm::calcHeightPercentiles(ld, resolution)
+  hcnt <- USGSlvm::calcHeightPointCounts(ld, resolution)
+  hdens <- USGSlvm::calcHeightPointPercents(hcnt, resolution)
 }
 
 
