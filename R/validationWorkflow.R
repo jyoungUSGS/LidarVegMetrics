@@ -8,7 +8,6 @@ library(gstat)
 
 setwd("C:/Users/nfkruska/Documents/data/SHEN")
 
-
 resolution <- 24
 
 # load plot points
@@ -112,32 +111,46 @@ get_tile_dir <- function(x, crs){
   return(sp_df)
 }
 
-td_2011 <- get_tile_dir("D:/CDI2017/Lidar_collects/SHEN/ShenValley2011/HAG/UNBuffered",
-  vp_poly@proj4string)
-td_2012 <- get_tile_dir("D:/CDI2017/Lidar_collects/SHEN/NRCS_RockinghamCnty_2012/HAG/UNBuffered",
-  vp_poly@proj4string)
-td_2013_cda <- get_tile_dir("D:/CDI2017/Lidar_collects/SHEN/NRCS2013/CDa/HAG/UNBuffered",
-  vp_poly@proj4string)
-td_2013_cdb <- get_tile_dir("D:/CDI2017/Lidar_collects/SHEN/NRCS2013/CDb/HAG/UNBuffered",
-  vp_poly@proj4string)
-td_2013_nda <- get_tile_dir("D:/CDI2017/Lidar_collects/SHEN/NRCS2013/NDa/HAG/UNBuffered",
-  vp_poly@proj4string)
-td_2013_ndb <- get_tile_dir("D:/CDI2017/Lidar_collects/SHEN/NRCS2013/NDb/HAG/UNBuffered",
-  vp_poly@proj4string)
-td_2015n_cdb <- get_tile_dir("D:/CDI2017/Lidar_collects/SHEN/Chesapeake_2015/CLASSIFIED_LAZ_VA_SP_NORTH_SNP/CDb/Tiled/HAG/UNBuffered",
-  vp_poly@proj4string)
-td_2015n_sda <- get_tile_dir("D:/CDI2017/Lidar_collects/SHEN/Chesapeake_2015/CLASSIFIED_LAZ_VA_SP_NORTH_SNP/SDa/HAG/UNBuffered",
-  vp_poly@proj4string)
-td_2015n_sdb <- get_tile_dir("D:/CDI2017/Lidar_collects/SHEN/Chesapeake_2015/CLASSIFIED_LAZ_VA_SP_NORTH_SNP/SDb/HAG/UNBuffered",
-  vp_poly@proj4string)
-td_2015s_sda <- get_tile_dir("D:/CDI2017/Lidar_collects/SHEN/Chesapeake_2015/CLASSIFIED_LAZ_VA_SP_SOUTH_SNP/SDa/HAG/UNBuffered",
-  vp_poly@proj4string)
-td_2015s_sdb <- get_tile_dir("D:/CDI2017/Lidar_collects/SHEN/Chesapeake_2015/CLASSIFIED_LAZ_VA_SP_SOUTH_SNP/SDb/HAG/UNBuffered",
-  vp_poly@proj4string)
+# td_2011 <- get_tile_dir("D:/CDI2017/Lidar_collects/SHEN/ShenValley2011/HAG/UNBuffered",
+#   vp_poly@proj4string)
+# td_2012 <- get_tile_dir("D:/CDI2017/Lidar_collects/SHEN/NRCS_RockinghamCnty_2012/HAG/UNBuffered",
+#   vp_poly@proj4string)
+# td_2013_cda <- get_tile_dir("D:/CDI2017/Lidar_collects/SHEN/NRCS2013/CDa/HAG/UNBuffered",
+#   vp_poly@proj4string)
+# td_2013_cdb <- get_tile_dir("D:/CDI2017/Lidar_collects/SHEN/NRCS2013/CDb/HAG/UNBuffered",
+#   vp_poly@proj4string)
+# td_2013_nda <- get_tile_dir("D:/CDI2017/Lidar_collects/SHEN/NRCS2013/NDa/HAG/UNBuffered",
+#   vp_poly@proj4string)
+# td_2013_ndb <- get_tile_dir("D:/CDI2017/Lidar_collects/SHEN/NRCS2013/NDb/HAG/UNBuffered",
+#   vp_poly@proj4string)
+# td_2015n_cdb <- get_tile_dir("D:/CDI2017/Lidar_collects/SHEN/Chesapeake_2015/CLASSIFIED_LAZ_VA_SP_NORTH_SNP/CDb/Tiled/HAG/UNBuffered",
+#   vp_poly@proj4string)
+# td_2015n_sda <- get_tile_dir("D:/CDI2017/Lidar_collects/SHEN/Chesapeake_2015/CLASSIFIED_LAZ_VA_SP_NORTH_SNP/SDa/HAG/UNBuffered",
+#   vp_poly@proj4string)
+# td_2015n_sdb <- get_tile_dir("D:/CDI2017/Lidar_collects/SHEN/Chesapeake_2015/CLASSIFIED_LAZ_VA_SP_NORTH_SNP/SDb/HAG/UNBuffered",
+#   vp_poly@proj4string)
+# td_2015s_sda <- get_tile_dir("D:/CDI2017/Lidar_collects/SHEN/Chesapeake_2015/CLASSIFIED_LAZ_VA_SP_SOUTH_SNP/SDa/HAG/UNBuffered",
+#   vp_poly@proj4string)
+# td_2015s_sdb <- get_tile_dir("D:/CDI2017/Lidar_collects/SHEN/Chesapeake_2015/CLASSIFIED_LAZ_VA_SP_SOUTH_SNP/SDb/HAG/UNBuffered",
+#   vp_poly@proj4string)
+#
+# writeOGR(td_2011, "./geo_layers/tile_dirs/td_2011.shp", "td_2011", driver = "ESRI Shapefile")
+# writeOGR(td_2012, "./geo_layers/tile_dirs/td_2012.shp", "td_2012", driver = "ESRI Shapefile")
+# writeOGR(td_2013_cda, "./geo_layers/tile_dirs/td_2013_cda.shp", "td_2013_cda", driver = "ESRI Shapefile")
+# writeOGR(td_2013_cdb, "./geo_layers/tile_dirs/td_2013_cdb.shp", "td_2013_cdb", driver = "ESRI Shapefile")
+# writeOGR(td_2013_nda, "./geo_layers/tile_dirs/td_2013_nda.shp", "td_2013_nda", driver = "ESRI Shapefile")
+# writeOGR(td_2013_ndb, "./geo_layers/tile_dirs/td_2013_ndb.shp", "td_2013_ndb", driver = "ESRI Shapefile")
+# writeOGR(td_2015n_cdb, "./geo_layers/tile_dirs/td_2015n_cdb.shp", "td_2015n_cdb", driver = "ESRI Shapefile")
+# writeOGR(td_2015n_sda, "./geo_layers/tile_dirs/td_2015n_sda.shp", "td_2015n_sda", driver = "ESRI Shapefile")
+# writeOGR(td_2015n_sdb, "./geo_layers/tile_dirs/td_2015n_sdb.shp", "td_2015n_sdb", driver = "ESRI Shapefile")
+# writeOGR(td_2015s_sda, "./geo_layers/tile_dirs/td_2015s_sda.shp", "td_2015s_sda", driver = "ESRI Shapefile")
+# writeOGR(td_2015s_sdb, "./geo_layers/tile_dirs/td_2015s_sdb.shp", "td_2015s_sdb", driver = "ESRI Shapefile")
 
+# Use ArcGIS to merge all las directory tile indexes together because
+# R just can't do it that easily
 
-
-
+sld <- readOGR("./geo_layers", layer = "shen_las_dir")
+vp_poly$fn <- as.character(over(vp_poly, sld)$filename)
 
 # shen_albers_tiles <- readOGR("./geo_layers", layer = "shen_albers_tiles")
 # tile_index_name <- paste(paste0("e", substr(shen_albers_tiles@data$TileID, 2, 5)),
@@ -156,13 +169,18 @@ td_2015s_sdb <- get_tile_dir("D:/CDI2017/Lidar_collects/SHEN/Chesapeake_2015/CLA
 
 # this should be a function written in parallel. Can that be done to write data
 # back to object? Or return a list of values and merge later?
+
+library(parallel)
+
+
 for (i in 1:nrow(vp_poly)){
-  ld <- readLidarData(vp_poly$filename[i], vp_poly@proj4string)
+  ld <- readLidarData(vp_poly$fn[i], vp_poly@proj4string@projargs)
   pld_ext <- extent(vp_poly[i, ])
   ld <- crop(ld, pld_ext)
 
   names(ld)[1] <- "Z_agl"
 
+  ld <- USGSlvm::classifyByHeight(ld)
   stats <- USGSlvm::calcPointStatistics(ld, resolution)
   vdr <- USGSlvm::calcVertDistRatio(ld, resolution)
   ccov <- USGSlvm::calcCanopyCover(ld, resolution)
@@ -170,7 +188,19 @@ for (i in 1:nrow(vp_poly)){
   hpct <- USGSlvm::calcHeightPercentiles(ld, resolution)
   hcnt <- USGSlvm::calcHeightPointCounts(ld, resolution)
   hdens <- USGSlvm::calcHeightPointPercents(hcnt, resolution)
+
+  s <- stack(stats, ccov, cdens, vdr, hpct, hcnt, hdens)
+
+  name <- paste0("./plotstats/plot_", vp_poly$SiteID[i], ".tif")
+  writeRaster(s, name)
 }
+
+# ERROR PLOTS
+# 2L126-1
+# 2L511-1
+# 2L578-1
+# 3L113-1
+# 3L558-1
 
 # PSEUDO CODE FOR EXTRACTING LIDAR METRICS BY SITE
 #
