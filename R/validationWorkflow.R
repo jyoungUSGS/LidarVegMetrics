@@ -5,13 +5,33 @@ library(USGSlvm)
 library(rgdal)
 library(data.table)
 library(gstat)
+library(tools)
+library(parallel)
 
+
+cl <- makeCluster(detectCores() - 1)
+clusterEvalQ(cl, {library(raster); library(USGSlvm); library(lidR)})
+
+resolution <- 12
+
+# data
 setwd("C:/Users/nfkruska/Documents/data/SHEN")
-
-resolution <- 24
-
-# load plot points
 vp_pnts <- readOGR("./geo_layers", layer = "SHEN_FVM_2003-2015_plots")
+
+tile_dirs <- c("ShenValley2011/HAG/UNBuffered",
+               "NRCS_RockinghamCnty_2012/HAG/UNBuffered",
+               "NRCS2013/CDa/HAG/UNBuffered",
+               "NRCS2013/CDa/HAG/UNBuffered",
+               "NRCS2013/CDb/HAG/UNBuffered",
+               "NRCS2013/NDa/HAG/UNBuffered",
+               "NRCS2013/NDb/HAG/UNBuffered",
+               "Chesapeake_2015/CLASSIFIED_LAZ_VA_SP_NORTH_SNP/CDb/Tiled/HAG/UNBuffered",
+               "Chesapeake_2015/CLASSIFIED_LAZ_VA_SP_NORTH_SNP/SDa/HAG/UNBuffered",
+               "Chesapeake_2015/CLASSIFIED_LAZ_VA_SP_NORTH_SNP/SDb/HAG/UNBuffered",
+               "Chesapeake_2015/CLASSIFIED_LAZ_VA_SP_SOUTH_SNP/SDa/HAG/UNBuffered",
+               "Chesapeake_2015/CLASSIFIED_LAZ_VA_SP_SOUTH_SNP/SDb/HAG/UNBuffered")
+
+tile_dirs <- sapply(tile_dirs, FUN = function(x){file.path("D:/CDI2017/Lidar_collects/SHEN", x)})
 
 # make plot Polygons
 # plot point is NW corner
@@ -37,19 +57,12 @@ shen_points_2_plots <- function(x, dim){
   plot_polys <- SpatialPolygonsDataFrame(multi_polys, x@data)
   return(plot_polys)
 }
-
-# load field information
-tree <- fread("./field_data/tree_data.csv")
-shrb <- fread("./field_data/shrub_data.csv")
-seed <- fread("./field_data/seedling_data.csv")
+vp_poly <- shen_points_2_plots(vp_pnts, 24)
 
 # values for latest survey of all sites,Visit # 4, ~ 2013-2015
 tree_v4 <- tree[Visit_Number == 4]
 shrb_v4 <- shrb[Visit_Number == 4]
 seed_v4 <- seed[Visit_Number == 4]
-
-# field plots
-vp_poly <- shen_points_2_plots(vp_pnts, 24)
 
 # calc field stats
 field_stats <- tree_v4[, .(mean(DBHcm, na.rm = T)), by = .(SiteID)]
@@ -93,107 +106,32 @@ setnames(field_stats, "N", "tree_stm_cnt")
 # merge field stats with plot polys
 vp_poly <- merge(vp_poly, field_stats, by = "SiteID", all.x=TRUE)
 
-get_tile_dir <- function(x, crs){
+clusterExport(cl, c("vp_pnts", "vp_poly"))
+
+tc <- parSapply(cl, tile_dirs, FUN = function(x){
   cat <- lidR::catalog(x)
   xy <- cat[28:31]
   tb <- data.frame(xy[, 2], xy[, 3], xy[, 1], xy[, 3], xy[, 1], xy[, 4],
-    xy[, 2], xy[, 4], xy[, 2], xy[, 3])
+                   xy[, 2], xy[, 4], xy[, 2], xy[, 3])
   names(tb) <- c("c1x", "c1y", "c2x", "c2y", "c3x", "c3y", "c4x", "c4y", "c1x",
-    "c1y")
+                 "c1y")
   poly_list <- apply(tb, 1, FUN = function(x){Polygon(matrix(unlist(x),
-    nrow = 5, ncol = 2, byrow = T))})
+                                                             nrow = 5, ncol = 2,
+                                                             byrow = T))})
   polys_list <- list()
   for (i in 1:length(poly_list)){
     polys_list[[i]] <- Polygons(poly_list[i], i)
   }
-  multi_polys <- SpatialPolygons(polys_list, proj4string = crs)
+  multi_polys <- SpatialPolygons(polys_list, proj4string = vp_pnts@proj4string)
   sp_df <- SpatialPolygonsDataFrame(multi_polys, as.data.frame(cat[34]))
   return(sp_df)
-}
+})
 
-# td_2011 <- get_tile_dir("D:/CDI2017/Lidar_collects/SHEN/ShenValley2011/HAG/UNBuffered",
-#   vp_poly@proj4string)
-# td_2012 <- get_tile_dir("D:/CDI2017/Lidar_collects/SHEN/NRCS_RockinghamCnty_2012/HAG/UNBuffered",
-#   vp_poly@proj4string)
-# td_2013_cda <- get_tile_dir("D:/CDI2017/Lidar_collects/SHEN/NRCS2013/CDa/HAG/UNBuffered",
-#   vp_poly@proj4string)
-# td_2013_cdb <- get_tile_dir("D:/CDI2017/Lidar_collects/SHEN/NRCS2013/CDb/HAG/UNBuffered",
-#   vp_poly@proj4string)
-# td_2013_nda <- get_tile_dir("D:/CDI2017/Lidar_collects/SHEN/NRCS2013/NDa/HAG/UNBuffered",
-#   vp_poly@proj4string)
-# td_2013_ndb <- get_tile_dir("D:/CDI2017/Lidar_collects/SHEN/NRCS2013/NDb/HAG/UNBuffered",
-#   vp_poly@proj4string)
-# td_2015n_cdb <- get_tile_dir("D:/CDI2017/Lidar_collects/SHEN/Chesapeake_2015/CLASSIFIED_LAZ_VA_SP_NORTH_SNP/CDb/Tiled/HAG/UNBuffered",
-#   vp_poly@proj4string)
-# td_2015n_sda <- get_tile_dir("D:/CDI2017/Lidar_collects/SHEN/Chesapeake_2015/CLASSIFIED_LAZ_VA_SP_NORTH_SNP/SDa/HAG/UNBuffered",
-#   vp_poly@proj4string)
-# td_2015n_sdb <- get_tile_dir("D:/CDI2017/Lidar_collects/SHEN/Chesapeake_2015/CLASSIFIED_LAZ_VA_SP_NORTH_SNP/SDb/HAG/UNBuffered",
-#   vp_poly@proj4string)
-# td_2015s_sda <- get_tile_dir("D:/CDI2017/Lidar_collects/SHEN/Chesapeake_2015/CLASSIFIED_LAZ_VA_SP_SOUTH_SNP/SDa/HAG/UNBuffered",
-#   vp_poly@proj4string)
-# td_2015s_sdb <- get_tile_dir("D:/CDI2017/Lidar_collects/SHEN/Chesapeake_2015/CLASSIFIED_LAZ_VA_SP_SOUTH_SNP/SDb/HAG/UNBuffered",
-#   vp_poly@proj4string)
-#
-# writeOGR(td_2011, "./geo_layers/tile_dirs/td_2011.shp", "td_2011", driver = "ESRI Shapefile")
-# writeOGR(td_2012, "./geo_layers/tile_dirs/td_2012.shp", "td_2012", driver = "ESRI Shapefile")
-# writeOGR(td_2013_cda, "./geo_layers/tile_dirs/td_2013_cda.shp", "td_2013_cda", driver = "ESRI Shapefile")
-# writeOGR(td_2013_cdb, "./geo_layers/tile_dirs/td_2013_cdb.shp", "td_2013_cdb", driver = "ESRI Shapefile")
-# writeOGR(td_2013_nda, "./geo_layers/tile_dirs/td_2013_nda.shp", "td_2013_nda", driver = "ESRI Shapefile")
-# writeOGR(td_2013_ndb, "./geo_layers/tile_dirs/td_2013_ndb.shp", "td_2013_ndb", driver = "ESRI Shapefile")
-# writeOGR(td_2015n_cdb, "./geo_layers/tile_dirs/td_2015n_cdb.shp", "td_2015n_cdb", driver = "ESRI Shapefile")
-# writeOGR(td_2015n_sda, "./geo_layers/tile_dirs/td_2015n_sda.shp", "td_2015n_sda", driver = "ESRI Shapefile")
-# writeOGR(td_2015n_sdb, "./geo_layers/tile_dirs/td_2015n_sdb.shp", "td_2015n_sdb", driver = "ESRI Shapefile")
-# writeOGR(td_2015s_sda, "./geo_layers/tile_dirs/td_2015s_sda.shp", "td_2015s_sda", driver = "ESRI Shapefile")
-# writeOGR(td_2015s_sdb, "./geo_layers/tile_dirs/td_2015s_sdb.shp", "td_2015s_sdb", driver = "ESRI Shapefile")
+tile_select <- parLapply(cl, tc, fun = function(x){
+  as.character(over(vp_poly, x)$filename)
+})
 
-# Use ArcGIS to merge all las directory tile indexes together because
-# R just can't do it that easily
-
-sld <- readOGR("./geo_layers", layer = "shen_las_dir")
-vp_poly$fn <- as.character(over(vp_poly, sld)$filename)
-
-# shen_albers_tiles <- readOGR("./geo_layers", layer = "shen_albers_tiles")
-# tile_index_name <- paste(paste0("e", substr(shen_albers_tiles@data$TileID, 2, 5)),
-#   paste0("n", substr(shen_albers_tiles@data$TileID, 7, 10)), sep = "_")
-#
-# shen_albers_tiles$tile_name <- paste(paste0("e",
-#   substr(shen_albers_tiles@data$TileID, 2, 5)), paste0("n",
-#   substr(shen_albers_tiles@data$TileID, 7, 10)), sep = "_")
-#
-# shen_albers_tiles <- spTransform(shen_albers_tiles, vp_poly@proj4string)
-# vp_poly$tile_index <- over(vp_poly, shen_albers_tiles)$tile_name
-#
-# laz_hag_list <- list.files("D:/CDI2017/Lidar_collects/SHEN",
-#   pattern = "_HAG.laz", recursive = T)
-
-
-# this should be a function written in parallel. Can that be done to write data
-# back to object? Or return a list of values and merge later?
-
-library(parallel)
-
-
-for (i in 1:nrow(vp_poly)){
-  ld <- readLidarData(vp_poly$fn[i], vp_poly@proj4string@projargs)
-  pld_ext <- extent(vp_poly[i, ])
-  ld <- crop(ld, pld_ext)
-
-  names(ld)[1] <- "Z_agl"
-
-  ld <- USGSlvm::classifyByHeight(ld)
-  stats <- USGSlvm::calcPointStatistics(ld, resolution)
-  vdr <- USGSlvm::calcVertDistRatio(ld, resolution)
-  ccov <- USGSlvm::calcCanopyCover(ld, resolution)
-  cdens <- USGSlvm::calcCanopyDensity(ld, resolution)
-  hpct <- USGSlvm::calcHeightPercentiles(ld, resolution)
-  hcnt <- USGSlvm::calcHeightPointCounts(ld, resolution)
-  hdens <- USGSlvm::calcHeightPointPercents(hcnt, resolution)
-
-  s <- stack(stats, ccov, cdens, vdr, hpct, hcnt, hdens)
-
-  name <- paste0("./plotstats/plot_", vp_poly$SiteID[i], ".tif")
-  writeRaster(s, name)
-}
+vp_poly$fn <- apply(data.frame(tile_select), 1, max, na.rm=T)
 
 # ERROR PLOTS
 # 2L126-1
@@ -202,14 +140,100 @@ for (i in 1:nrow(vp_poly)){
 # 3L113-1
 # 3L558-1
 
-# PSEUDO CODE FOR EXTRACTING LIDAR METRICS BY SITE
-#
-# extract tile index ID to veg poly
-# Recursively search through all shenandoah data folders to find a matching
-# LAZ file by tile index ID, extract full path of LAZ to veg poly
-# For each Veg poly
-#   load intersecting lidar file
-#   crop point data to veg poly extent
-#   calculate all lidar metrics
-#   extract lidar metric values to veg poly
-#   save lidar metrics by veg poly name
+clusterExport(cl, c("vp_pnts", "vp_poly", "resolution"))
+
+err <- list()
+lv <- parLapply(cl, 1:3, fun = function(x){
+  tryCatch({
+      sp <- vp_poly[x, ]
+      ld <- USGSlvm::readLidarData(sp$fn, sp@proj4string@projargs)
+      
+      sp_ext <- extent(sp)
+      ld <- crop(ld, sp_ext)
+      
+      names(ld)[1] <- "Z_agl"
+      
+      ld <- USGSlvm::classifyByHeight(ld)
+      stats <- USGSlvm::calcPointStatistics(ld, resolution)
+      vdr <- USGSlvm::calcVertDistRatio(ld, resolution)
+      ccov <- USGSlvm::calcCanopyCover(ld, resolution)
+      cdens <- USGSlvm::calcCanopyDensity(ld, resolution)
+      hpct <- USGSlvm::calcHeightPercentiles(ld, resolution)
+      hcnt <- USGSlvm::calcHeightPointCounts(ld, resolution)
+      hdens <- USGSlvm::calcHeightPointPercents(hcnt, resolution)
+      
+      s <- stack(stats, ccov, cdens, vdr, hpct)
+      v <- c(siteID = as.character(sp$siteID), apply(getValues(s), 2, mean))
+      return(v)
+  }, error = function(e){
+      err <- c(err, vp_poly$siteID[x])
+      v <- c(as.character(vp_poly$siteID[x]), rep(NA, 21))
+      return(v)
+  }, finally = {
+      name <- paste0("./plotstats/plot_", resolution, "m_", sp$siteID, ".tif")
+      writeRaster(s, name, overwrite = T)
+  })
+})
+
+lv_df <- data.frame(matrix(unlist(lv), ncol = 22, nrow = length(lv), byrow = T))
+names(lv_df) <- c("plot", "hmin", "hmax", "havg", "hstd", "hske",
+                       "hkur", "hqav", "ccov", "cdens", "vdr98", "vdr100",
+                       "x10", "x20", "x30", "x40", "x50", "x60", "x70",
+                       "x80", "x90", "x98")
+write.csv(lv_df, "shen_plot_lidar_mets.csv")
+
+
+
+# comp <- parSapply(cl, list.files("./plotstats", pattern = "plot_12m"),
+#                   FUN = function(x){
+#                     c(unlist(strsplit(unlist(strsplit(basename(x), "_"))[3],
+#                                       "[.]"))[1])
+# })
+# undone <- vp_poly$siteID[!vp_poly$siteID %in% comp]
+
+# l_cnt <- parLapply(cl, p_list, fun = function(x){
+#   nlayers(stack(x))
+# })
+# df_col <- max(unlist(l_cnt))
+
+# v_list <- parLapply(cl, p_list, fun = function(x){
+#   v <- c(unlist(strsplit(unlist(strsplit(basename(x), "_"))[2], "[.]"))[1],
+#          getValues(stack(x))[1:21])
+#   return(v)
+# })
+# plot_stats <- data.frame(matrix(unlist(v_list), nrow = 160, ncol = 22,
+#                                 byrow = T))
+# names(plot_stats) <- c("plot", "hmin", "hmax", "havg", "hstd", "hske",
+#                        "hkur", "hqav", "ccov", "cdens", "vdr98", "vdr100",
+#                        "x10", "x20", "x30", "x40", "x50", "x60", "x70",
+#                        "x80", "x90", "x98")
+# write.csv(plot_stats, "./plotstats/plot_stats.csv")
+# 
+# names(vp_poly)[1] <- names(plot_stats)[1] <- "siteID"
+# vp_stats <- merge(vp_poly, plot_stats)
+# cols = c(22:42)   
+# vp_stats@data[,cols] = apply(vp_stats@data[,cols], 2, function(x)
+#   {as.numeric(as.character(x))
+# })
+
+r_table <- data.frame(matrix(ncol = 10, nrow = 21),
+                      row.names = names(vp_stats@data[22:42]))
+for (i in 22:42){
+  for (j in 12:21){
+    tmp <- lm(vp_stats@data[, j] ~ vp_stats@data[, i])
+    plot(vp_stats@data[, j], vp_stats@data[, i], ylab = names(vp_stats)[i],
+         xlab = names(vp_stats)[j])
+    abline(tmp)
+    
+    names(r_table)[(j-11)] <- names(vp_stats)[j]
+    r_table[(i-21), (j-11)] <- summary(tmp)$adj.r.squared  
+  }
+}
+write.csv(r_table, "./plotstats/shen_plots_adjrsq_lidar.csv")
+
+
+
+
+
+
+

@@ -9,7 +9,7 @@ library(rgdal)
 dbh <<- 1.37
 
 # Absolute path to working directory for output files
-project_dir <- "C:/Users/nfkruska/Documents/data/SHEN/SHEN_2011"
+project_dir <- "C:/Users/nfkruska/Documents/data/SHEN/lidar_projects/SHEN_2011"
 
 # Relative or absolute path to location of lidar files
 lidar_dir <- "./HAG"
