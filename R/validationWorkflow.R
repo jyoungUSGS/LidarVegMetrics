@@ -1,22 +1,32 @@
-library(rlas)
-library(sp)
-library(raster)
-library(USGSlvm)
-library(rgdal)
 library(data.table)
 library(gstat)
-library(tools)
 library(parallel)
+library(raster)
+library(rgdal)
+library(rlas)
+library(sp)
+library(tools)
+library(USGSlvm)
 
+# site dimension
+site_dim <-24
 
-cl <- makeCluster(detectCores() - 1)
-clusterEvalQ(cl, {library(raster); library(USGSlvm); library(lidR)})
+# field site visit number
+visit_num <- 4
 
+# set desired output resolution
 resolution <- 12
 
-# data
+# data & paths
 setwd("C:/Users/nfkruska/Documents/data/SHEN")
-vp_pnts <- readOGR("./geo_layers", layer = "SHEN_FVM_2003-2015_plots")
+out_path <- "./site_stats"
+lid_path <- "D:/CDI2017/Lidar_collects/SHEN"
+
+ss_pnts <- readOGR("./geo_layers", layer = "SHEN_FVM_2003-2015_plots")
+
+tree <- fread("./field_data/tree_data.csv")
+shrb <- fread("./field_data/shrub_data.csv")
+seed <- fread("./field_data/seedling_data.csv")
 
 tile_dirs <- c("ShenValley2011/HAG/UNBuffered",
                "NRCS_RockinghamCnty_2012/HAG/UNBuffered",
@@ -30,19 +40,22 @@ tile_dirs <- c("ShenValley2011/HAG/UNBuffered",
                "Chesapeake_2015/CLASSIFIED_LAZ_VA_SP_NORTH_SNP/SDb/HAG/UNBuffered",
                "Chesapeake_2015/CLASSIFIED_LAZ_VA_SP_SOUTH_SNP/SDa/HAG/UNBuffered",
                "Chesapeake_2015/CLASSIFIED_LAZ_VA_SP_SOUTH_SNP/SDb/HAG/UNBuffered")
+tile_dirs <- sapply(tile_dirs, FUN = function(x){file.path(lid_path, x)})
 
-tile_dirs <- sapply(tile_dirs, FUN = function(x){file.path("D:/CDI2017/Lidar_collects/SHEN", x)})
+# make cluster for parallel computing
+cl <- makeCluster(detectCores() - 1)
+clusterEvalQ(cl, {library(raster); library(sp); library(USGSlvm); library(lidR)})
 
-# make plot Polygons
-# plot point is NW corner
-shen_points_2_plots <- function(x, dim){
+# make site polygons
+# func assumes site point is NW corner
+shen_pnt_2_poly <- function(x, dim){
   vp_xy <- x@data[, 10:11]
-  vp_xy[, 3] <- vp_xy[, 1] + 24
+  vp_xy[, 3] <- vp_xy[, 1] + dim
   vp_xy[, 4] <- vp_xy[, 2]
-  vp_xy[, 5] <- vp_xy[, 1] + 24
-  vp_xy[, 6] <- vp_xy[, 2] - 24
+  vp_xy[, 5] <- vp_xy[, 1] + dim
+  vp_xy[, 6] <- vp_xy[, 2] - dim
   vp_xy[, 7] <- vp_xy[, 1]
-  vp_xy[, 8] <- vp_xy[, 2] - 24
+  vp_xy[, 8] <- vp_xy[, 2] - dim
   vp_xy[, 9] <- vp_xy[, 1]
   vp_xy[, 10] <- vp_xy[, 2]
   names(vp_xy) <- c("c1x", "c1y", "c2x", "c2y", "c3x", "c3y", "c4x",
@@ -54,17 +67,19 @@ shen_points_2_plots <- function(x, dim){
     polys_list[[i]] <- Polygons(poly_list[i], i)
   }
   multi_polys <- SpatialPolygons(polys_list, proj4string = x@proj4string)
-  plot_polys <- SpatialPolygonsDataFrame(multi_polys, x@data)
-  return(plot_polys)
+  site_polys <- SpatialPolygonsDataFrame(multi_polys, x@data)
+  return(site_polys)
 }
-vp_poly <- shen_points_2_plots(vp_pnts, 24)
+ss_plys <- shen_pnt_2_poly(ss_pnts, site_dim)
 
-# values for latest survey of all sites,Visit # 4, ~ 2013-2015
-tree_v4 <- tree[Visit_Number == 4]
-shrb_v4 <- shrb[Visit_Number == 4]
-seed_v4 <- seed[Visit_Number == 4]
+# select survey visit #. Visit # 4 ~ 2013-2015
+tree_v4 <- tree[Visit_Number == visit_num]
+shrb_v4 <- shrb[Visit_Number == visit_num]
+seed_v4 <- seed[Visit_Number == visit_num]
 
-# calc field stats
+# calculate field stats: mean dbh, basal area per ha, max canopy height,
+# mean canopy height, min canopy height, shrub mean dbh, shrub stem count,
+# seedling stem count, tree stem count.
 field_stats <- tree_v4[, .(mean(DBHcm, na.rm = T)), by = .(SiteID)]
 setnames(field_stats, "V1", "tree_mean_dbh_cm")
 
@@ -103,11 +118,12 @@ field_stats <- merge(field_stats, tree_v4[, .N,
   by = .(SiteID)], by = "SiteID", all.x=TRUE)
 setnames(field_stats, "N", "tree_stm_cnt")
 
-# merge field stats with plot polys
-vp_poly <- merge(vp_poly, field_stats, by = "SiteID", all.x=TRUE)
+# merge field stats with site polys
+ss_plys <- merge(ss_plys, field_stats, by = "SiteID", all.x=TRUE)
 
-clusterExport(cl, c("vp_pnts", "vp_poly"))
+clusterExport(cl, c("ss_plys"))
 
+# for each site, find the lidar tile that covers it
 tc <- parSapply(cl, tile_dirs, FUN = function(x){
   cat <- lidR::catalog(x)
   xy <- cat[28:31]
@@ -122,114 +138,107 @@ tc <- parSapply(cl, tile_dirs, FUN = function(x){
   for (i in 1:length(poly_list)){
     polys_list[[i]] <- Polygons(poly_list[i], i)
   }
-  multi_polys <- SpatialPolygons(polys_list, proj4string = vp_pnts@proj4string)
+  multi_polys <- SpatialPolygons(polys_list, proj4string = ss_plys@proj4string)
   sp_df <- SpatialPolygonsDataFrame(multi_polys, as.data.frame(cat[34]))
   return(sp_df)
 })
 
-tile_select <- parLapply(cl, tc, fun = function(x){
-  as.character(over(vp_poly, x)$filename)
+ts <- parLapply(cl, tc, fun = function(x){
+  as.character(over(ss_plys, x)$filename)
 })
 
-vp_poly$fn <- apply(data.frame(tile_select), 1, max, na.rm=T)
+# merge tile dir to site polys
+ss_plys$fn <- apply(data.frame(ts), 1, max, na.rm=T)
 
-# ERROR PLOTS
-# 2L126-1
-# 2L511-1
-# 2L578-1
-# 3L113-1
-# 3L558-1
+# ERROR sites: 3L113-1, 3L558-1
+# The links for these sites must be corrected manually before 
+# calculating lidar metrics or else they will return NA.
+# WARNING: this is not a fool-proof method. It simply replaces the links
+# to tiles I know do not work with the next alternative link found.
 
-clusterExport(cl, c("vp_pnts", "vp_poly", "resolution"))
+# for known error sites, find alternative lidar tile link, replace known
+# bad ones.
+err_sites <- c("3L113-1", "3L558-1")
+for (e in err_sites){
+  alt <- list.files(lid_path, pattern = basename(ss_plys$fn[ss_plys$SiteID == e]), 
+                    recursive = T)
+  alt <- sapply(alt, FUN = function(x){file.path(lid_path, x)})
+  alt <- alt[alt != ss_plys$fn[ss_plys$SiteID == e]]
+  ss_plys$fn[ss_plys$SiteID == e] <- alt[1]
+}
 
-err <- list()
-lv <- parLapply(cl, 1:3, fun = function(x){
-  tryCatch({
-      sp <- vp_poly[x, ]
-      ld <- USGSlvm::readLidarData(sp$fn, sp@proj4string@projargs)
-      
-      sp_ext <- extent(sp)
-      ld <- crop(ld, sp_ext)
-      
-      names(ld)[1] <- "Z_agl"
-      
-      ld <- USGSlvm::classifyByHeight(ld)
-      stats <- USGSlvm::calcPointStatistics(ld, resolution)
-      vdr <- USGSlvm::calcVertDistRatio(ld, resolution)
-      ccov <- USGSlvm::calcCanopyCover(ld, resolution)
-      cdens <- USGSlvm::calcCanopyDensity(ld, resolution)
-      hpct <- USGSlvm::calcHeightPercentiles(ld, resolution)
-      hcnt <- USGSlvm::calcHeightPointCounts(ld, resolution)
-      hdens <- USGSlvm::calcHeightPointPercents(hcnt, resolution)
-      
-      s <- stack(stats, ccov, cdens, vdr, hpct)
-      v <- c(siteID = as.character(sp$siteID), apply(getValues(s), 2, mean))
-      return(v)
-  }, error = function(e){
-      err <- c(err, vp_poly$siteID[x])
-      v <- c(as.character(vp_poly$siteID[x]), rep(NA, 21))
-      return(v)
-  }, finally = {
-      name <- paste0("./plotstats/plot_", resolution, "m_", sp$siteID, ".tif")
-      writeRaster(s, name, overwrite = T)
-  })
+clusterExport(cl, c("ss_plys", "resolution"))
+
+# for each site, load the lidar tile, clip points, calculate metrics,
+# write output raster, add metric values to list
+lv <- parLapply(cl, 1:nrow(ss_plys), FUN = function(x){
+  sp <- ss_plys[x, ]
+  ld <- USGSlvm::readLidarData(sp$fn, sp@proj4string@projargs)
+  
+  sp_ext <- extent(sp)
+  ld <- crop(ld, sp_ext)
+  if (is.null(ld)){
+    err <- c(err, ss_plys$siteID[x])
+    v <- c(as.character(ss_plys$siteID[x]), rep(NA, 21))
+    return(v)
+  } else {
+    names(ld)[1] <- "Z_agl"
+    
+    ld <- USGSlvm::classifyByHeight(ld)
+    stats <- USGSlvm::calcPointStatistics(ld, resolution)
+    vdr <- USGSlvm::calcVertDistRatio(ld, resolution)
+    ccov <- USGSlvm::calcCanopyCover(ld, resolution)
+    cdens <- USGSlvm::calcCanopyDensity(ld, resolution)
+    hpct <- USGSlvm::calcHeightPercentiles(ld, resolution)
+    hcnt <- USGSlvm::calcHeightPointCounts(ld, resolution)
+    hdens <- USGSlvm::calcHeightPointPercents(hcnt, resolution)
+    
+    s <- stack(stats, ccov, cdens, vdr, hpct)
+    v <- c(siteID = as.character(sp$siteID), apply(getValues(s), 2, mean))
+    name <- paste0(out_path, "site_", resolution, "m_", sp$SiteID, ".tif")
+    writeRaster(s, name, overwrite = T)
+    return(v)
+  }
 })
 
+# make output metrics into data frame
 lv_df <- data.frame(matrix(unlist(lv), ncol = 22, nrow = length(lv), byrow = T))
-names(lv_df) <- c("plot", "hmin", "hmax", "havg", "hstd", "hske",
-                       "hkur", "hqav", "ccov", "cdens", "vdr98", "vdr100",
-                       "x10", "x20", "x30", "x40", "x50", "x60", "x70",
-                       "x80", "x90", "x98")
-write.csv(lv_df, "shen_plot_lidar_mets.csv")
+names(lv_df) <- c("SiteID", "hmin", "hmax", "havg", "hstd", "hske", "hkur",
+                  "hqav", "ccov", "cdens", "vdr98", "vdr100", "x10", "x20",
+                  "x30", "x40", "x50", "x60", "x70", "x80", "x90", "x98")
+# save lidar metrics
+write.csv(lv_df, file.path(out_path, "site_stats.csv"))
 
+# get metric values from output rasters in folder (alt method)
+# t_list <- list_files_with_exts("out_path", "tif")
+# lv <- parLapply(cl, t_list, fun = function(x){
+#   v <- c(unlist(strsplit(unlist(strsplit(basename(x), "_"))[3], "[.]"))[1],
+#          apply(getValues(stack(x)), 2, mean))
+# })
+# make output metrics into data frame
+# lv_df <- data.frame(matrix(unlist(lv), ncol = 22, nrow = length(lv), byrow = T))
+# names(lv_df) <- c("SiteID", "hmin", "hmax", "havg", "hstd", "hske", "hkur",
+#                   "hqav", "ccov", "cdens", "vdr98", "vdr100", "x10", "x20",
+#                   "x30", "x40", "x50", "x60", "x70", "x80", "x90", "x98")
+# save lidar metrics
+# write.csv(lv_df, file.path(out_path, "site_stats.csv"))
 
-
-# comp <- parSapply(cl, list.files("./plotstats", pattern = "plot_12m"),
+# find error sites
+# comp <- parSapply(cl, list.files(out_path, pattern = "site_12m"),
 #                   FUN = function(x){
 #                     c(unlist(strsplit(unlist(strsplit(basename(x), "_"))[3],
 #                                       "[.]"))[1])
-# })
-# undone <- vp_poly$siteID[!vp_poly$siteID %in% comp]
+#                   })
+# undone <- ss_plys[! ss_plys$SiteID %in% comp, ]
 
-# l_cnt <- parLapply(cl, p_list, fun = function(x){
-#   nlayers(stack(x))
-# })
-# df_col <- max(unlist(l_cnt))
-
-# v_list <- parLapply(cl, p_list, fun = function(x){
-#   v <- c(unlist(strsplit(unlist(strsplit(basename(x), "_"))[2], "[.]"))[1],
-#          getValues(stack(x))[1:21])
-#   return(v)
-# })
-# plot_stats <- data.frame(matrix(unlist(v_list), nrow = 160, ncol = 22,
-#                                 byrow = T))
-# names(plot_stats) <- c("plot", "hmin", "hmax", "havg", "hstd", "hske",
-#                        "hkur", "hqav", "ccov", "cdens", "vdr98", "vdr100",
-#                        "x10", "x20", "x30", "x40", "x50", "x60", "x70",
-#                        "x80", "x90", "x98")
-# write.csv(plot_stats, "./plotstats/plot_stats.csv")
-# 
-# names(vp_poly)[1] <- names(plot_stats)[1] <- "siteID"
-# vp_stats <- merge(vp_poly, plot_stats)
-# cols = c(22:42)   
-# vp_stats@data[,cols] = apply(vp_stats@data[,cols], 2, function(x)
-#   {as.numeric(as.character(x))
-# })
-
-r_table <- data.frame(matrix(ncol = 10, nrow = 21),
-                      row.names = names(vp_stats@data[22:42]))
-for (i in 22:42){
-  for (j in 12:21){
-    tmp <- lm(vp_stats@data[, j] ~ vp_stats@data[, i])
-    plot(vp_stats@data[, j], vp_stats@data[, i], ylab = names(vp_stats)[i],
-         xlab = names(vp_stats)[j])
-    abline(tmp)
-    
-    names(r_table)[(j-11)] <- names(vp_stats)[j]
-    r_table[(i-21), (j-11)] <- summary(tmp)$adj.r.squared  
-  }
-}
-write.csv(r_table, "./plotstats/shen_plots_adjrsq_lidar.csv")
+# random forest classification with lidar metrics only
+dat <- cbind(ss_plys$Classifi_1, lv_df)
+names(dat)[1] <- "class"
+dat$SiteID <- NULL
+dat[, 2:22] <- apply(dat[,2:22], 2, function(x){as.numeric(as.character(x))})
+dat <- dat[-which(is.na(dat)), ]
+rf <- randomForest(class ~., data = dat)
+rf
 
 
 
