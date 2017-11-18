@@ -1,5 +1,6 @@
 library(data.table)
 library(gstat)
+library(nnet)
 library(parallel)
 library(raster)
 library(rgdal)
@@ -44,7 +45,8 @@ tile_dirs <- sapply(tile_dirs, FUN = function(x){file.path(lid_path, x)})
 
 # make cluster for parallel computing
 cl <- makeCluster(detectCores() - 1)
-clusterEvalQ(cl, {library(raster); library(sp); library(USGSlvm); library(lidR)})
+clusterEvalQ(cl, {library(raster); library(sp); library(USGSlvm);
+                  library(rgdal); library(lidR)})
 
 # make site polygons
 # func assumes site point is NW corner
@@ -148,10 +150,11 @@ ts <- parLapply(cl, tc, fun = function(x){
 })
 
 # merge tile dir to site polys
-ss_plys$fn <- apply(data.frame(ts), 1, max, na.rm=T)
+ss_plys$fn <- parApply(cl, data.frame(ts), 1, FUN = max, na.rm=T)
+
 
 # ERROR sites: 3L113-1, 3L558-1
-# The links for these sites must be corrected manually before 
+# The links for these sites must be corrected before 
 # calculating lidar metrics or else they will return NA.
 # WARNING: this is not a fool-proof method. It simply replaces the links
 # to tiles I know do not work with the next alternative link found.
@@ -167,11 +170,11 @@ for (e in err_sites){
   ss_plys$fn[ss_plys$SiteID == e] <- alt[1]
 }
 
-clusterExport(cl, c("ss_plys", "resolution"))
+clusterExport(cl, c("ss_plys", "resolution", "out_path"))
 
 # for each site, load the lidar tile, clip points, calculate metrics,
 # write output raster, add metric values to list
-lv <- parLapply(cl, 1:nrow(ss_plys), FUN = function(x){
+lv <- parLapply(cl, 1:nrow(ss_plys), fun = function(x){
   sp <- ss_plys[x, ]
   ld <- USGSlvm::readLidarData(sp$fn, sp@proj4string@projargs)
   
@@ -194,9 +197,9 @@ lv <- parLapply(cl, 1:nrow(ss_plys), FUN = function(x){
     hdens <- USGSlvm::calcHeightPointPercents(hcnt, resolution)
     
     s <- stack(stats, ccov, cdens, vdr, hpct)
-    v <- c(siteID = as.character(sp$siteID), apply(getValues(s), 2, mean))
-    name <- paste0(out_path, "site_", resolution, "m_", sp$SiteID, ".tif")
-    writeRaster(s, name, overwrite = T)
+    v <- c(siteID = as.character(sp$SiteID), apply(getValues(s), 2, mean))
+    name <- paste0(out_path, "/site_", resolution, "m_", sp$SiteID, ".tif")
+    raster::writeRaster(s, name, overwrite = T)
     return(v)
   }
 })
@@ -239,10 +242,3 @@ dat[, 2:22] <- apply(dat[,2:22], 2, function(x){as.numeric(as.character(x))})
 dat <- dat[-which(is.na(dat)), ]
 rf <- randomForest(class ~., data = dat)
 rf
-
-
-
-
-
-
-
