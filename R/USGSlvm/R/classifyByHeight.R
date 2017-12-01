@@ -14,7 +14,6 @@
 #'@export
 
 classifyByHeight <- function(x, binHeight = 5, binCount = NA){
-    # x <- x[x$Classification %in% pointClasses,]
 
     maxAgl <- max(x$Z_agl[x$Classification == 1], na.rm=TRUE)
 
