@@ -199,6 +199,7 @@ for (res in output_res){
 
   tile_time <- system.time(tiles <- clusterApplyLB(cl, lidar_files,
     calc_metrics, CRS = input_crs, output_dir = res_output, resolution = res))
+  gc()
   # mosaic_time <- system.time(clusterApplyLB(cl, products, create_mosaics,
   #   output_dir = folders["mosaics"]))
 }
