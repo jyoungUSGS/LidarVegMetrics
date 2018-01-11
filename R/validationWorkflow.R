@@ -2,6 +2,7 @@ library(data.table)
 library(gstat)
 library(nnet)
 library(parallel)
+library(randomForest)
 library(raster)
 library(rgdal)
 library(rlas)
@@ -19,13 +20,14 @@ visit_num <- 4
 resolution <- 12
 
 # data & paths
-setwd("C:/Users/nfkruska/Documents/data/SHEN")
+setwd("C:/Users/nfkruska/Documents/projects/SHEN")
 out_path <- "./site_stats"
 lid_path <- "D:/CDI2017/Lidar_collects/SHEN"
 
+
 ss_pnts <- readOGR("./geo_layers", layer = "SHEN_FVM_2003-2015_plots")
 lv_df <- fread(file.path(out_path, "site_stats.csv"))
-
+lv_df[, 3:23] <- as.data.frame(sapply(lv_df[, 3:23], as.numeric))
 
 tree <- fread("./field_data/tree_data.csv")
 shrb <- fread("./field_data/shrub_data.csv")
@@ -236,16 +238,50 @@ ss_plys <- merge(ss_plys, field_stats, by = "SiteID", all.x=TRUE)
 #                   })
 # undone <- ss_plys[! ss_plys$SiteID %in% comp, ]
 
-# random forest classification with lidar metrics only
-dat <- cbind(ss_plys$COMMON_ass, lv_df)
+# random forest classification and regression
+dat <- cbind(ss_plys$Classifi_1, lv_df)
+dat <- cbind(dat, field_stats)
 names(dat)[1] <- "class"
-dat$SiteID <- dat$V1 <- NULL
-dat[, 2:22] <- apply(dat[, 2:22], 2, function(x){as.numeric(as.character(x))})
-dat <- dat[-which(is.na(dat)), ]
-rf <- randomForest(as.factor(class) ~., data = dat)
-rf
+dat$SiteID <- dat$V1 <- dat$SiteID <- NULL
+dat <- dat[complete.cases(dat), ]
+rf_class <- randomForest(as.factor(class) ~., data = dat[, 1:22])
 
-dat <- cbind(field_stats, site_stats)
-dat$SiteID <- dat$V1 <- NULL
-dat$SiteID <- NULL
-dat <- as.data.table(apply(dat, 2, function(x){as.numeric(as.character(x))}))
+rf_sum_ba <- randomForest(tree_sum_ba_m2~., data = dat[, c(2:22, 24)])
+rf_ba_ha <- randomForest(ba_per_ha~., data = dat[, c(2:22, 25)])
+rf_mean_dbh <- randomForest(tree_mean_dbh_cm~., data = dat[, c(2:22, 23)])
+
+
+tmp <- as.data.frame(dat)
+r_table <- data.frame(matrix(nrow = 21, ncol = 10))
+for (l in 2:22){
+  for (f in 23:32){
+    mod <- lm(tmp[, f] ~ tmp[, l])
+    plot(tmp[, f] ~ tmp[, l], xlab = names(tmp)[l], ylab = names(tmp)[f])
+    abline(mod)
+    r_table[(l-1), (f-22)] <- summary(mod)$adj.r.squared  
+  }
+}
+rownames(r_table) <- names(tmp[, 2:22])
+colnames(r_table) <- names(tmp[, 23:32])
+
+
+df <- data.frame(x = dat$hstd, y = dat$tree_max_ht_m)
+mod <- glm(y ~ x, data = df)
+mod
+summary(mod)
+
+# predicts + interval
+newx <- seq(0, max(df$x), length.out=nrow(df))
+preds <- predict(mod, newdata = data.frame(x=newx), interval = "conf")
+# plot
+plot(df, type = "n")
+# add fill
+polygon(c(rev(newx), newx), c(rev(preds[ ,3]), preds[ ,2]),
+        col=rgb(1, 0, 0,0.5), border = NA)
+# model
+abline(mod, col = "blue", lwd = 2)
+# intervals
+lines(newx, preds[ ,3], lty = "dashed", col = "red")
+lines(newx, preds[ ,2], lty = "dashed", col = "red")
+points(df, pch = 16, cex = 0.7)
+

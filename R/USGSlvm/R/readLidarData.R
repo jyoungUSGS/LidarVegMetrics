@@ -15,7 +15,7 @@
 #'@importFrom rlas readlasdata
 #'@importFrom sp coordinates proj4string CRS
 
-readLidarData <- function(x, inputCRS, maxHAG = 300, returnAll = FALSE){
+readLidarData <- function(x, inputCRS, maxHAG = 70, returnAll = FALSE){
 
   x <- rlas::readlasdata(x, F, T, T, F, F, T, T, F, F, F)
 
