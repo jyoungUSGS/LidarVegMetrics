@@ -144,20 +144,10 @@ create_res_output <- function(f){
   return(p)
 }
 
-cl <- makeCluster(detectCores() - 1)
-clusterEvalQ(cl, {
-  library(rlas); library(sp); library(raster);
-  library(rgdal); library(data.table); library(gstat);
-  library(USGSlvm); library(tools); library(parallel)
-})
-clusterExport(cl, c("veg_floor", "veg_ceiling", "ras_fmt", "folders"))
-
 for (res in output_res){
   res_output <- file.path(folders["tiles"], paste(res, "m", sep = ""))
   products <- create_res_output(res_output)
 
-  tile_time <- system.time(tiles <- clusterApplyLB(cl, lidar_files,
-    calc_metrics, CRS = input_crs, output_dir = res_output, resolution = res))
-  gc()
+  tile_time <- system.time(tiles <- lapply(lidar_files, calc_metrics,
+    CRS = input_crs, output_dir = res_output, resolution = res))
 }
-stopCluster(cl)
