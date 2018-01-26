@@ -4,16 +4,20 @@ library(tools)
 library(parallel)
 library(rgdal)
 
+# PARAMETERS ==================================================================
 # Absolute path to working directory for output files
 project_dir <- "C:/Users/nfkruska/Documents/projects/SHEN/va_shen_2011"
 
-# Relative or absolute path to location of lidar files
-lidar_dir <- "./HAG"
-# output folder sub directory to project directory
+# input lidar files dir
+in_dir <- "./HAG"
+
+# output metrics tiles dir
 out_dir <- "./tiles"
+
 # output raster resolution(s). Can be integer or list of integers
-# will create folder for each resolution in out_dir
+# will create dir for each resolution in out_dir
 output_res <- c(10, 25)
+unit <- "m"
 
 # Input CRS of lidar files found by EPSG code
 # NAD83 / UTM zone 17N: 26917
@@ -35,25 +39,7 @@ hag_nrml <- T
 # .tif: "GTiff"
 ras_fmt <- "GTiff"
 
-# =============================================================================
-setwd(project_dir)
-
-lidar_files <- tools::list_files_with_exts(lidar_dir,
-                                          c("LAS", "las", "LAZ", "laz"))
-if (length(lidar_files) == 0){
-  stop("No lidar files found in lidar directory.")
-}
-
-epsg <- make_EPSG()
-epsg <- epsg[! is.na(epsg$code), ]
-input_crs <- epsg$prj4[epsg$code == epsg_code]
-if (length(input_crs) == 0){
-  stop("EPSG code was not found.")
-}
-
-dir.create(out_dir)
-
-# =============================================================================
+# FUNCTIONS ===================================================================
 save_output <- function(output_dir, folder, tile_name, product, file){
   output_path <- file.path(output_dir, folder, paste(tile_name, product,
                                                      sep = "_"))
@@ -106,20 +92,20 @@ calc_metrics <- function(x, CRS, output_dir, resolution, nrml = T){
   las_data <- USGSlvm::classifyByHeight(las_data)
   
   for (res in resolution){
-    res_output <- file.path(output_dir, paste(res, "m", sep = ""))
-    products <- create_res_output(res_output)
-
+    # set output dir
+    res_output <- file.path(output_dir, paste(res, unit, sep = ""))
+    
+    # format tile name by project spec
     tile_name <- format_tile_name(x, res)
     print(tile_name)
-  
+    
     # metrics functions
     stats <- USGSlvm::calcPointStatistics(las_data, resolution)
     save_output(res_output, "stats", tile_name, "stat", stats)
-
-
+    
     vdr <- USGSlvm::calcVertDistRatio(las_data, resolution)
     save_output(res_output, "ratios", tile_name, "vdrs", vdr)
-
+    
     create_canopy_stack <- function(x, res){
       ccov <- USGSlvm::calcCanopyCover(x, res)
       cdens <- USGSlvm::calcCanopyDensity(x, res)
@@ -129,30 +115,59 @@ calc_metrics <- function(x, CRS, output_dir, resolution, nrml = T){
     }
     cnpy <- create_canopy_stack(las_data, resolution)
     save_output(res_output, "canopy", tile_name, "cnpy", cnpy)
-
+    
     hpct <- USGSlvm::calcHeightPercentiles(las_data, resolution)
     save_output(res_output, "height_pct", tile_name, "hpct", hpct)
-
+    
     hcnt <- USGSlvm::calcHeightPointCounts(las_data, resolution)
     save_output(res_output, "height_cnt", tile_name, "hcnt", hcnt)
-
+    
     hdens <- USGSlvm::calcHeightPointPercents(hcnt, resolution)
     save_output(res_output, "height_den", tile_name, "hden", hdens)
   }
   return(TRUE)
 }
 
-cl <- makeCluster(detectCores() - 1)
+# MAIN ========================================================================
+setwd(project_dir)
+
+# get list of input lidar files
+lidar_files <- tools::list_files_with_exts(in_dir,
+                                          c("LAS", "las", "LAZ", "laz"))
+if (length(lidar_files) == 0){
+  stop("No lidar files found in lidar directory.")
+}
+
+# get proj.4 string from EPSG code
+epsg <- make_EPSG()
+epsg <- epsg[! is.na(epsg$code), ]
+input_crs <- epsg$prj4[epsg$code == epsg_code]
+if (length(input_crs) == 0){
+  stop("EPSG code was not found.")
+}
+rm(epsg)
+
+# create output, resolution, and product dirs in project dir
+dir.create(out_dir)
+for (res in output_res){
+  res_output <- file.path(out_dir, paste(res, unit, sep = ""))
+  products <- create_res_output(res_output)
+}
+
+# make cluster, export packages / objects / functions
+cl <- makeCluster(detectCores() - 2)
 clusterEvalQ(cl, {
   library(rlas); library(sp); library(raster);
   library(rgdal); library(data.table); library(gstat);
   library(USGSlvm); library(tools); library(parallel)
 })
 clusterExport(cl, c("veg_floor", "veg_ceiling", "ras_fmt", "create_res_output",
-                    "format_tile_name", "save_output"))
+                    "format_tile_name", "save_output", "unit"))
 
+# process tiles in parallel
 tile_time <- system.time(tiles <- parLapply(cl, lidar_files,
   calc_metrics, CRS = input_crs, output_dir = out_dir,
-  resolution = output_res))
+  resolution = output_res, nrml = hag_nrml))
 
+# stop cluster
 stopCluster(cl)
