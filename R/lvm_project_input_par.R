@@ -124,7 +124,9 @@ calc_metrics <- function(x, CRS, output_dir, resolution, nrml = T){
     
     hcnt <- USGSlvm::calcHeightPointCounts(las_data, resolution)
     while (nlayers(hcnt) < bnd_cnt){
-      hcnt <- addLayer(hcnt, raster(hcnt, vals = NA))
+      r <- raster(hcnt)
+      values(r) <- NA
+      hcnt <- addLayer(hcnt, r)
     }
     save_output(res_output, "height_cnt", tile_name, "hcnt", hcnt)
     
@@ -168,7 +170,7 @@ clusterEvalQ(cl, {
   library(USGSlvm); library(tools); library(parallel)
 })
 clusterExport(cl, c("veg_floor", "veg_ceiling", "ras_fmt", "create_res_output",
-                    "format_tile_name", "save_output", "unit"))
+                    "format_tile_name", "save_output", "unit", "bnd_cnt"))
 
 # process tiles in parallel
 tile_time <- system.time(tiles <- parLapply(cl, lidar_files,
