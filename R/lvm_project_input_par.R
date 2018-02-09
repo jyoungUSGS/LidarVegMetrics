@@ -39,6 +39,9 @@ hag_nrml <- T
 # .tif: "GTiff"
 ras_fmt <- "GTiff"
 
+# number of bands for hcnt and hdens
+bnd_cnt <- 10
+
 # FUNCTIONS ===================================================================
 save_output <- function(output_dir, folder, tile_name, product, file){
   output_path <- file.path(output_dir, folder, paste(tile_name, product,
@@ -120,6 +123,9 @@ calc_metrics <- function(x, CRS, output_dir, resolution, nrml = T){
     save_output(res_output, "height_pct", tile_name, "hpct", hpct)
     
     hcnt <- USGSlvm::calcHeightPointCounts(las_data, resolution)
+    while (nlayers(hcnt) < bnd_cnt){
+      hcnt <- addLayer(hcnt, raster(hcnt, vals = NA))
+    }
     save_output(res_output, "height_cnt", tile_name, "hcnt", hcnt)
     
     hdens <- USGSlvm::calcHeightPointPercents(hcnt, resolution)
