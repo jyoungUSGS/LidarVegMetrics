@@ -1,14 +1,11 @@
 #------------------------------------------------------------------------------
-# Name: usgslvm_cmd_merge.R
-# Purpose: to merge all files from text list into single raster output
-# Usage: 2 arguments
-#        1) input text file: text file containing paths to raster files
-#           to be merged
-#        2) path and name of output file with extension.
-# 
-# Notes: file paths can be relative or absolute dependings on your command line
-#        directory location.
-
+# Name:       usgslvm_cmd_merge.R
+# Purpose:    Merge all input rasters.
+# Arguments:  1) text file containing paths to raster files to be merged.
+#             Each path on new line. 2) path and name of output file with 
+#             extension.
+# Notes:      File paths can be relative or absolute dependings on your command
+#             line directory location.
 
 library(raster)
 library(tools)
@@ -29,4 +26,4 @@ for (f in file_list){
   m <- merge(m, r, tolerance = 1)
 }
 writeRaster(m, args[2], overwrite = T)
-print("done.")
+print("complete.")
