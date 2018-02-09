@@ -16,7 +16,7 @@ out_dir <- "./tiles"
 
 # output raster resolution(s). Can be integer or list of integers
 # will create dir for each resolution in out_dir
-output_res <- c(10, 25)
+output_res <- c(25)
 unit <- "m"
 
 # Input CRS of lidar files found by EPSG code
@@ -50,11 +50,11 @@ save_output <- function(output_dir, folder, tile_name, product, file){
   
   if (product %in% c("hden", "hcnt", "hpct")){
     raster::writeRaster(file, output_path, ras_fmt, overwrite = T,
-                        options = "COMPRESS = DEFLATE")
+                        NAflag = -9999, options = "COMPRESS = DEFLATE")
   } else {
     raster::writeRaster(file, output_path, ras_fmt, overwrite = T,
                         bylayer = T, suffix = names(file),
-                        options = "COMPRESS = DEFLATE")
+                        NAflag = -9999, options = "COMPRESS = DEFLATE")
   }
 }
 
