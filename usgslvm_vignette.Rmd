@@ -1,0 +1,68 @@
+---
+title: "USGS LVM"
+author: "Nicholas Kruskamp"
+date: "February 15, 2018"
+output:
+  html_document:
+    df_print: paged
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(USGSlvm)
+```
+
+## USGS CDI lidar processing overview
+
+This document provides an overview of the basic workflow used to create standardized metrics for the UGSS CDI project "".
+
+To import data, a path to a LAS or LAZ lidar file must be provided along with a coordinate reference system in standard proj4 format. Additional options are provided to remove values about a certain height that might be considred noise, and to limit the classification of points to exclude possible overlap, water, and noise. NOTE: points must already be height normalized. Reading las data relies on the R package rlas which provides access to lastools and laszip from R. The lidar data is transforms into a spatial points dataframe, providing all the functionality of the SP package for spatial data processing.
+```{r data input}
+USGSlvm::readLidarData
+
+#example usage
+las_data <- USGSlvm::readLidarData("C:/Users/nfkruska/Documents/projects/SHEN/va_shen_2011/HAG/SHENVAL2011_744e_4308n_HAG.laz", "+proj=utm +zone=17 +datum=NAD83 +units=m +no_defs")
+
+# since data is expected to be normalized, the z column is changed to reflect
+# normalized heights. Code is written to look for this column name. Future 
+# development may include a function to normalize points and provide a new
+# column of "Z_agl".
+names(las_data)[1] <- "Z_agl"
+
+# In addition, points must be classified by height above ground level
+las_data <- USGSlvm::classifyByHeight(las_data)
+
+las_data
+```
+
+## Lidar Metrics
+A number of predefined lidar metrics are available from the USGSlvm package. While the preprocessed data are served at resolutions of 10 and 25 meters, these functions allow the users to specify any resolution. It is hightly recommended that the resolution provided be an even multiple of the lidar points extent to avoid irregularities in pixels or edge effects of resulting rasters.
+
+```{r data processing}
+resolution <- 25
+USGSlvm::calcPointStatistics
+stats <- USGSlvm::calcPointStatistics(las_data, resolution)
+
+USGSlvm::calcVertDistRatio
+vdr <- USGSlvm::calcVertDistRatio(las_data, resolution)
+
+USGSlvm::calcCanopyCover
+ccov <- USGSlvm::calcCanopyCover(las_data, resolution)
+
+USGSlvm::calcCanopyDensity
+cdens <- USGSlvm::calcCanopyDensity(las_data, resolution)
+
+USGSlvm::calcHeightPercentiles
+hpct <- USGSlvm::calcHeightPercentiles(las_data, resolution)
+
+USGSlvm::calcHeightPointCounts
+hcnt <- USGSlvm::calcHeightPointCounts(las_data, resolution)
+
+# Notice this function take an input from calcHeightPointCounts instead of 
+# las_data. While it is capable of processing the las file, CalcHieghtPointPercents
+# would require a call to calcHeightPointCounts. Providing the result in the way
+# avoids calling the function twice.
+USGSlvm::calcHeightPointPercents
+hdens <- USGSlvm::calcHeightPointPercents(hcnt, resolution)
+```
+

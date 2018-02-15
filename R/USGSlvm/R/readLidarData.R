@@ -23,6 +23,8 @@ readLidarData <- function(x, inputCRS, maxHAG = 70, returnAll = FALSE){
     x <- x[x$Classification %in% c(1, 2, 3, 4, 5, 8, 19), ]
   }
 
+  x <- x[x$Z < maxHAG, ]
+  
   sp::coordinates(x) <- ~X+Y
   sp::proj4string(x) <- sp::CRS(inputCRS)
   return(x)
