@@ -1,5 +1,6 @@
 library(data.table)
 library(gstat)
+library(leaps)
 library(nnet)
 library(parallel)
 library(randomForest)
@@ -24,10 +25,14 @@ setwd("C:/Users/nfkruska/Documents/projects/SHEN")
 out_path <- "./site_stats"
 lid_path <- "D:/CDI2017/Lidar_collects/SHEN"
 
-
 ss_pnts <- readOGR("./geo_layers", layer = "SHEN_FVM_2003-2015_plots")
+
+
 lv_df <- fread(file.path(out_path, "site_stats.csv"))
-lv_df[, 3:23] <- as.data.frame(sapply(lv_df[, 3:23], as.numeric))
+lv_df$V1 <- NULL
+lv_df[, 2:22] <- as.data.frame(sapply(lv_df[, 2:22], as.numeric))
+
+
 
 tree <- fread("./field_data/tree_data.csv")
 shrb <- fread("./field_data/shrub_data.csv")
@@ -46,11 +51,6 @@ tile_dirs <- c("ShenValley2011/HAG/UNBuffered",
                "Chesapeake_2015/CLASSIFIED_LAZ_VA_SP_SOUTH_SNP/SDa/HAG/UNBuffered",
                "Chesapeake_2015/CLASSIFIED_LAZ_VA_SP_SOUTH_SNP/SDb/HAG/UNBuffered")
 tile_dirs <- sapply(tile_dirs, FUN = function(x){file.path(lid_path, x)})
-
-# make cluster for parallel computing
-cl <- makeCluster(detectCores() - 1)
-clusterEvalQ(cl, {library(raster); library(sp); library(USGSlvm);
-                  library(rgdal); library(lidR)})
 
 # make site polygons
 # func assumes site point is NW corner
@@ -79,54 +79,58 @@ shen_pnt_2_poly <- function(x, dim){
 ss_plys <- shen_pnt_2_poly(ss_pnts, site_dim)
 
 # select survey visit #. Visit # 4 ~ 2013-2015
-tree_v4 <- tree[Visit_Number == visit_num]
-shrb_v4 <- shrb[Visit_Number == visit_num]
-seed_v4 <- seed[Visit_Number == visit_num]
+tree_sub <- tree[Visit_Number == visit_num]
+shrb_sub <- shrb[Visit_Number == visit_num]
+seed_sub <- seed[Visit_Number == visit_num]
 
 # calculate field stats: mean dbh, basal area per ha, max canopy height,
 # mean canopy height, min canopy height, shrub mean dbh, shrub stem count,
 # seedling stem count, tree stem count.
-field_stats <- tree_v4[, .(mean(DBHcm, na.rm = T)), by = .(SiteID)]
+field_stats <- tree_sub[, .(mean(DBHcm, na.rm = T)), by = .(SiteID)]
 setnames(field_stats, "V1", "tree_mean_dbh_cm")
 
-field_stats <- merge(field_stats, tree_v4[, .(sum(TreeBA_m2, na.rm = T)),
+field_stats <- merge(field_stats, tree_sub[, .(sum(TreeBA_m2, na.rm = T)),
   by = .(SiteID)], by = "SiteID", all.x=TRUE)
 setnames(field_stats, "V1", "tree_sum_ba_m2")
-field_stats$ba_per_ha <- field_stats$tree_sum_ba * (10000 / (24*24))
 
-field_stats <- merge(field_stats, tree_v4[, .(max(Tree_ht_m_calc, na.rm = T)),
+field_stats <- merge(field_stats, tree_sub[, .(max(Tree_ht_m_calc, na.rm = T)),
   by = .(SiteID)], by = "SiteID", all.x=TRUE)
 setnames(field_stats, "V1", "tree_max_ht_m")
 field_stats$tree_max_ht_m[field_stats$tree_max_ht_m == -Inf] <- NA
 
-field_stats <- merge(field_stats, tree_v4[, .(mean(Tree_ht_m_calc, na.rm = T)),
+field_stats <- merge(field_stats, tree_sub[, .(mean(Tree_ht_m_calc, na.rm = T)),
   by = .(SiteID)], by = "SiteID", all.x=TRUE)
 setnames(field_stats, "V1", "tree_mean_ht_m")
 
-field_stats <- merge(field_stats, tree_v4[, .(min(Tree_ht_m_calc, na.rm = T)),
+field_stats <- merge(field_stats, tree_sub[, .(min(Tree_ht_m_calc, na.rm = T)),
   by = .(SiteID)], by = "SiteID", all.x=TRUE)
 setnames(field_stats, "V1", "tree_min_ht_m")
 field_stats$tree_min_ht_m[field_stats$tree_min_ht_m == Inf] <- NA
 
-field_stats <- merge(field_stats, shrb_v4[, .(mean(Calc_DBH, na.rm = T)),
+field_stats <- merge(field_stats, shrb_sub[, .(mean(Calc_DBH, na.rm = T)),
   by = .(SiteID)], by = "SiteID", all.x=TRUE)
 setnames(field_stats, "V1", "shrb_mean_dbh_cm")
 
-field_stats <- merge(field_stats, shrb_v4[, .(sum(Stem_count, na.rm = T)),
+field_stats <- merge(field_stats, shrb_sub[, .(sum(Stem_count, na.rm = T)),
   by = .(SiteID)], by = "SiteID", all.x=TRUE)
 setnames(field_stats, "V1", "shrb_stm_cnt")
 
-field_stats <- merge(field_stats, seed_v4[, .(sum(Stem_count, na.rm = T)),
+field_stats <- merge(field_stats, seed_sub[, .(sum(Stem_count, na.rm = T)),
   by = .(SiteID)], by = "SiteID", all.x=TRUE)
 setnames(field_stats, "V1", "seed_stm_cnt")
 
-field_stats <- merge(field_stats, tree_v4[, .N,
+field_stats <- merge(field_stats, tree_sub[, .N,
   by = .(SiteID)], by = "SiteID", all.x=TRUE)
 setnames(field_stats, "N", "tree_stm_cnt")
 
 # merge field stats with site polys
 ss_plys <- merge(ss_plys, field_stats, by = "SiteID", all.x=TRUE)
 
+
+# # make cluster for parallel computing
+# cl <- makeCluster(detectCores() - 1)
+# clusterEvalQ(cl, {library(raster); library(sp); library(USGSlvm);
+#                   library(rgdal); library(lidR)})
 # clusterExport(cl, c("ss_plys"))
 # 
 # # for each site, find the lidar tile that covers it
@@ -237,51 +241,61 @@ ss_plys <- merge(ss_plys, field_stats, by = "SiteID", all.x=TRUE)
 #                                       "[.]"))[1])
 #                   })
 # undone <- ss_plys[! ss_plys$SiteID %in% comp, ]
+ss_plys <- merge(ss_plys, lv_df, by = "SiteID", all.x=TRUE)
 
-# random forest classification and regression
-dat <- cbind(ss_plys$Classifi_1, lv_df)
-dat <- cbind(dat, field_stats)
-names(dat)[1] <- "class"
-dat$SiteID <- dat$V1 <- dat$SiteID <- NULL
+
+
+
+dat <- ss_plys@data
+dat$Site_Name <- dat$SiteID <- dat$Classifi_1 <- dat$Classifica <- dat$COMMON_ass <- NULL
 dat <- dat[complete.cases(dat), ]
-rf_class <- randomForest(as.factor(class) ~., data = dat[, 1:22])
 
-rf_sum_ba <- randomForest(tree_sum_ba_m2~., data = dat[, c(2:22, 24)])
-rf_ba_ha <- randomForest(ba_per_ha~., data = dat[, c(2:22, 25)])
-rf_mean_dbh <- randomForest(tree_mean_dbh_cm~., data = dat[, c(2:22, 23)])
-
-
-tmp <- as.data.frame(dat)
+# adjr2 table for all metrics with all field data
+dat_df <- as.data.frame(dat)
 r_table <- data.frame(matrix(nrow = 21, ncol = 10))
 for (l in 2:22){
   for (f in 23:32){
-    mod <- lm(tmp[, f] ~ tmp[, l])
-    plot(tmp[, f] ~ tmp[, l], xlab = names(tmp)[l], ylab = names(tmp)[f])
+    mod <- lm(dat_df[, f] ~ dat_df[, l])
+    plot(dat_df[, f] ~ dat_df[, l], xlab = names(dat_df)[l], ylab = names(dat_df)[f])
     abline(mod)
-    r_table[(l-1), (f-22)] <- summary(mod)$adj.r.squared  
+    r_table[(l-1), (f-22)] <- summary(mod)$adj.r.squared
   }
 }
-rownames(r_table) <- names(tmp[, 2:22])
-colnames(r_table) <- names(tmp[, 23:32])
+rownames(r_table) <- names(dat_df[, 2:22])
+colnames(r_table) <- names(dat_df[, 23:32])
+
+# random forest classification and regression
+rf_class <- randomForest(as.factor(class) ~., data = dat[, 1:22])
+rf_sum_ba <- randomForest(tree_sum_ba_m2~., data = dat[, c(1:6, 8, 17:37)])
+rf_ba_ha <- randomForest(ba_per_ha~., data = dat[, c(1:6, 10, 17:37)])
+rf_mean_dbh <- randomForest(tree_mean_dbh_cm~., data = dat[, c(2:22, 23)])
+rf_max_ht <- randomForest(tree_max_ht_m~., data = dat[, c(1:6, 10, 17:37)])
+rf_stem_cnt <- randomForest(tree_stm_cnt~., data = dat[, c(1:6, 16, 17:37)])
+
+# find best subset of variables for linear model
+dat_m <- as.matrix(dat[, 2:32])
+lps_sub <- regsubsets(x = dat_m[, 1:21], y = dat_m[, 25], nbest = 3, nvmax = 3)
 
 
-df <- data.frame(x = dat$hstd, y = dat$tree_max_ht_m)
-mod <- glm(y ~ x, data = df)
-mod
-summary(mod)
-
-# predicts + interval
-newx <- seq(0, max(df$x), length.out=nrow(df))
-preds <- predict(mod, newdata = data.frame(x=newx), interval = "conf")
-# plot
-plot(df, type = "n")
-# add fill
-polygon(c(rev(newx), newx), c(rev(preds[ ,3]), preds[ ,2]),
-        col=rgb(1, 0, 0,0.5), border = NA)
-# model
-abline(mod, col = "blue", lwd = 2)
-# intervals
-lines(newx, preds[ ,3], lty = "dashed", col = "red")
-lines(newx, preds[ ,2], lty = "dashed", col = "red")
-points(df, pch = 16, cex = 0.7)
+# 
+# 
+# df <- data.frame(x = dat$hstd, y = dat$tree_max_ht_m)
+# mod <- glm(y ~ x, data = df)
+# mod
+# summary(mod)
+# 
+# # predicts + interval
+# newx <- seq(0, max(df$x), length.out=nrow(df))
+# preds <- predict(mod, newdata = data.frame(x=newx), interval = "conf")
+# # plot
+# plot(df, type = "n")
+# # add fill
+# polygon(c(rev(newx), newx), c(rev(preds[ ,3]), preds[ ,2]),
+#         col=rgb(1, 0, 0,0.5), border = NA)
+# # model
+# abline(mod, col = "blue", lwd = 2)
+# # intervals
+# lines(newx, preds[ ,3], lty = "dashed", col = "red")
+# lines(newx, preds[ ,2], lty = "dashed", col = "red")
+# points(df, pch = 16, cex = 0.7)
 

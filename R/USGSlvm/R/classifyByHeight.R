@@ -17,7 +17,11 @@ classifyByHeight <- function(x, binHeight = 5, binCount = NA){
 
     maxAgl <- max(x$Z_agl[x$Classification == 1], na.rm=TRUE)
 
-    if (is.na(binHeight)) {
+    if (is.na(binHeight) & is.na(binCount)){
+      stop("Please specify one: binHeight, binCount")
+    } else if (!is.na(binHeight) & !is.na(binCount)){
+      stop("Please specify only one: binHeight, binCount")
+    } else if (is.na(binHeight) & !is.na(binCount)){
       binHeight <- maxAgl / binCount
     } else {
       binCount <- ceiling(maxAgl / binHeight)
@@ -30,7 +34,6 @@ classifyByHeight <- function(x, binHeight = 5, binCount = NA){
       bottom <- bottom
       top <- bottom + binHeight
       x$Classification[bottom <= x$Z_agl & x$Z_agl < top & x$Classification == 1] <- vegClass
-
       bottom <- top
       vegClass <- vegClass + 1
     }

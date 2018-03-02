@@ -15,16 +15,16 @@
 #'@export
 #'@importFrom raster raster rasterize addLayer
 
-calcHeightPercentiles <- function(x, resolution = 30,
-                                  percentiles = c(.10, .20, .30, .40, .50, .60,
-                                  .70, .80, .90, .98),
+calcHeightPercentiles <- function(x, resolution = 30, percentiles = c(.10, .20,
+                                  .30, .40, .50, .60, .70, .80, .90, .98),
                                   pointClasses = c(100:200)){
   tile_raster <- raster::raster(x, resolution = resolution)
   perc_stack <- raster::raster(x, resolution = resolution)
   x <- x[x$Classification %in% pointClasses, ]
   for (i in percentiles){
-    perc_rast <- raster::rasterize(x, tile_raster,
-      field = x$Z_agl, fun = function(x, ...){quantile(x, i, na.rm = T)})
+    perc_rast <- raster::rasterize(x, tile_raster, field = x$Z_agl,
+                                   fun = function(x, ...){quantile(x, i,
+                                   na.rm = T)})
     perc_stack <- raster::addLayer(perc_stack, perc_rast)
   }
   perc_names <- as.character(percentiles * 100)
