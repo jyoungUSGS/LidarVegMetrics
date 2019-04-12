@@ -4,7 +4,7 @@
 #'
 #'@usage readLidarData (LASfile, inputCRS, maxHAG = 70, returnAll=FALSE)
 #'
-#'@param LASfile A standard LAS data file (ASPRS)
+#'@param LASfile A standard LAS or LAZ data file (ASPRS)
 #'@param proj4string to be interpreted as a CRS by SP pacakge.
 #'@param Logical. Default FALSE. By default, only returns Classification 0, 1, & 2.
 #'@return Returns a Spatial Points class of the point information stored in the LAS file.
@@ -15,17 +15,15 @@
 #'@importFrom rlas readlasdata
 #'@importFrom sp coordinates proj4string CRS
 
-readLidarData <- function(x, inputCRS, maxHAG = 70, returnAll = FALSE){
+readLidarData <- function(x, inputCRS, returnAll = FALSE){
 
-  x <- rlas::readlasdata(x, F, T, T, F, F, T, T, F, F, F)
+  f <- rlas::read.las(x, select = "xyzicr")
 
   if (returnAll==F) {
-    x <- x[x$Classification %in% c(1, 2, 3, 4, 5, 8, 19), ]
+    f <- f[f$Classification %in% c(1, 2, 3, 4, 5, 8, 19), ]
   }
 
-  x <- x[x$Z < maxHAG, ]
-  
-  sp::coordinates(x) <- ~X+Y
-  sp::proj4string(x) <- sp::CRS(inputCRS)
-  return(x)
+  sp::coordinates(f) <- ~X+Y
+  sp::proj4string(f) <- sp::CRS(inputCRS)
+  return(f)
 }
