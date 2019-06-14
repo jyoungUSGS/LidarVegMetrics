@@ -4,12 +4,12 @@
 \alias{readLidarData}
 \title{Read LiDAR point data}
 \usage{
-readLASdata_bin (LASfile, inputCRS, returnAll=FALSE)
+readLidarData (LASfile, inputCRS, maxHAG = 70, returnAll=FALSE)
 }
 \arguments{
-\item{LASfile}{A standard LAS data file (ASPRS)}
+\item{LASfile}{A standard LAS or LAZ data file (ASPRS)}
 
-\item{An}{exactly formatted proj4 string to be interpreted as a CRS by SP pacakge.}
+\item{proj4string}{to be interpreted as a CRS by SP pacakge.}
 
 \item{Logical.}{Default FALSE. By default, only returns Classification 0, 1, & 2.}
 }
