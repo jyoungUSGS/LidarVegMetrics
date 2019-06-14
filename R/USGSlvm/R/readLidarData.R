@@ -12,7 +12,7 @@
 #'@examples
 #'
 #'@export
-#'@importFrom rlas readlasdata
+#'@importFrom rlas read.las
 #'@importFrom sp coordinates proj4string CRS
 
 readLidarData <- function(x, inputCRS, returnAll = FALSE){
